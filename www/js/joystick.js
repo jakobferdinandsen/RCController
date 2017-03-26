@@ -23,13 +23,24 @@ var leftNipple = {
 
 
 var leftJoystick;
-var leftPosition;
+var leftPosition = {
+  direction: {
+    angle: "none"
+  },
+  distance: 0
+};
 var rightJoystick;
-var rightPosition;
+var rightPosition = {
+  direction: {
+    angle: "none"
+  },
+  distance: 0
+};
 
 leftJoystick = nipplejs.create(leftNipple);
 leftJoystick.on('start end', function(evt, data) {
   leftPosition.distance = 0;
+  leftPosition.direction.angle = "none";
 }).on('move', function(evt, data) {
   leftPosition = data;
 });
@@ -37,11 +48,12 @@ leftJoystick.on('start end', function(evt, data) {
 rightJoystick = nipplejs.create(rightNipple);
 rightJoystick.on('start end', function(evt, data) {
   rightPosition.distance = 0;
+  rightPosition.direction.angle = "none";
 }).on('move', function(evt, data) {
   rightPosition = data;
 });
 $(function(){
   setInterval(function(){
     app.sendData(leftPosition, rightPosition);
-  }, 100);
+  }, 10);
 });
