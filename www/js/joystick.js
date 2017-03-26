@@ -4,8 +4,8 @@ var rightNipple = {
     zone: document.getElementById("rightZone"),
     mode: 'static',
     position: {
-      left: '80%',
-      top: '70%'
+      left: '75%',
+      top: '65%'
     },
     size: radius*2,
     color: 'black'
@@ -14,8 +14,8 @@ var leftNipple = {
     zone: document.getElementById("leftZone"),
     mode: 'static',
     position: {
-      left: '20%',
-      top: '70%'
+      left: '25%',
+      top: '65%'
     },
     size: radius*2,
     color: 'black'
