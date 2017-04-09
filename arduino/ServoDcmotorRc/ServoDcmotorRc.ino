@@ -11,13 +11,6 @@ class DistanceSensor {
       this->echoPin = echoPin;
     }
 
-    void toString() {
-      Serial.print("Trigger pin: ");
-      Serial.print(trigPin);
-      Serial.print("Echo pin: ");
-      Serial.println(echoPin);
-    }
-
     int getDistance() {
       /* establish variables for duration of the ping,
          and the distance result in inches and centimeters: */
@@ -39,7 +32,7 @@ class DistanceSensor {
       duration = pulseIn(echoPin, HIGH);
 
       /* convert the time into a distance */
-      cm = this->microsecondsToCentimeters(duration);
+      cm = microsecondsToCentimeters(duration);
       return cm;
     }
 
@@ -79,10 +72,6 @@ int pwmMax = 50;            //Max pwm signal to DCmotor
 #include <ArduinoJson.h>
 int speed = 100;
 int direction = 100;
-
-/* Echo */
-int echo1 = 0;                  //Sensor forward in cm
-int echo2 = 0;                  //Sensor reverse in cm
 
 /* Sensors */
 DistanceSensor forwardSensor(4, 2);
