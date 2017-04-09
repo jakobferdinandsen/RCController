@@ -1,56 +1,55 @@
-
 var app = {
     macAddress: "00:06:66:72:87:52",  // get your mac address from bluetoothSerial.list
     chars: "",
 
-/*
-    Application constructor
- */
-    initialize: function() {
+    /*
+     Application constructor
+     */
+    initialize: function () {
         this.bindEvents();
     },
-/*
-    bind any events that are required on startup to listeners:
-*/
-    bindEvents: function() {
+    /*
+     bind any events that are required on startup to listeners:
+     */
+    bindEvents: function () {
         document.addEventListener('deviceready', this.onDeviceReady, false);
         connectButton.addEventListener('touchend', app.manageConnection, false);
     },
 
-/*
-    this runs when the device is ready for user interaction:
-*/
-    onDeviceReady: function() {
+    /*
+     this runs when the device is ready for user interaction:
+     */
+    onDeviceReady: function () {
         // check to see if Bluetooth is turned on.
         // this function is called only
         //if isEnabled(), below, returns success:
-        var listPorts = function() {
+        var listPorts = function () {
             // list the available BT ports:
             bluetoothSerial.list(
-                function(results) {
+                function (results) {
                     app.display(JSON.stringify(results));
                 },
-                function(error) {
+                function (error) {
                     app.display(JSON.stringify(error));
                 }
             );
         }
 
         // if isEnabled returns failure, this function is called:
-        var notEnabled = function() {
+        var notEnabled = function () {
             app.display("Bluetooth is not enabled.")
         }
 
-         // check if Bluetooth is on:
+        // check if Bluetooth is on:
         bluetoothSerial.isEnabled(
             listPorts,
             notEnabled
         );
     },
-/*
-    Connects if not connected, and disconnects if connected:
-*/
-    manageConnection: function() {
+    /*
+     Connects if not connected, and disconnects if connected:
+     */
+    manageConnection: function () {
 
         // connect() will get called only if isConnected() (below)
         // returns failure. In other words, if not connected, then connect:
@@ -83,25 +82,25 @@ var app = {
         // here's the real action of the manageConnection function:
         bluetoothSerial.isConnected(disconnect, connect);
     },
-    sendData: function(leftPosition, rightPosition){
-      var failure = function() {
-          alert("Failed writing data to Bluetooth peripheral");
-      };
+    sendData: function (leftPosition, rightPosition) {
+        var failure = function () {
+            alert("Failed writing data to Bluetooth peripheral");
+        };
 
-      var success = function() {
-        app.clear();
-        app.display("Sent data successfully");
-      };
+        var success = function () {
+            app.clear();
+            app.display("Sent data successfully");
+        };
 
-      var data = getAxes(leftPosition, rightPosition);
+        var data = getAxes(leftPosition, rightPosition);
 
-      bluetoothSerial.write(JSON.stringify(data), success, failure);
+        bluetoothSerial.write(JSON.stringify(data), success, failure);
     },
-/*
-    subscribes to a Bluetooth serial listener for newline
-    and changes the button:
-*/
-    openPort: function() {
+    /*
+     subscribes to a Bluetooth serial listener for newline
+     and changes the button:
+     */
+    openPort: function () {
         // if you get a good Bluetooth serial connection:
         app.display("Connected to: " + app.macAddress);
         // change the button's name:
@@ -115,33 +114,33 @@ var app = {
         });
     },
 
-/*
-    unsubscribes from any Bluetooth serial listener and changes the button:
-*/
-    closePort: function() {
+    /*
+     unsubscribes from any Bluetooth serial listener and changes the button:
+     */
+    closePort: function () {
         // if you get a good Bluetooth serial connection:
         app.display("Disconnected from: " + app.macAddress);
         // change the button's name:
         connectButton.innerHTML = "Connect";
         // unsubscribe from listening:
         bluetoothSerial.unsubscribe(
-                function (data) {
-                    app.display(data);
-                },
-                app.showError
+            function (data) {
+                app.display(data);
+            },
+            app.showError
         );
     },
-/*
-    appends @error to the message div:
-*/
-    showError: function(error) {
+    /*
+     appends @error to the message div:
+     */
+    showError: function (error) {
         app.display(error);
     },
 
-/*
-    appends @message to the message div:
-*/
-    display: function(message) {
+    /*
+     appends @message to the message div:
+     */
+    display: function (message) {
         var display = document.getElementById("message"), // the message div
             lineBreak = document.createElement("br"),     // a line break
             label = document.createTextNode(message);     // create the label
@@ -149,35 +148,35 @@ var app = {
         display.appendChild(lineBreak);          // add a line break
         display.appendChild(label);              // add the message node
     },
-/*
-    clears the message div:
-*/
-    clear: function() {
+    /*
+     clears the message div:
+     */
+    clear: function () {
         var display = document.getElementById("message");
         display.innerHTML = "";
     }
 };      // end of app
 
-function getAxes(leftPosition, rightPosition){
-  speed = 100;
-  if (leftPosition.direction !== undefined){
-    if (leftPosition.direction.angle === "up"){
-      speed += leftPosition.distance;
-    }else if(leftPosition.direction.angle === "down"){
-      speed -= leftPosition.distance;
+function getAxes(leftPosition, rightPosition) {
+    speed = 100;
+    if (leftPosition.direction !== undefined) {
+        if (leftPosition.direction.angle === "up") {
+            speed += leftPosition.distance;
+        } else if (leftPosition.direction.angle === "down") {
+            speed -= leftPosition.distance;
+        }
     }
-  }
-  direction = 100;
-  if (rightPosition.direction !== undefined){
-    if (rightPosition.direction.angle === "left"){
-      direction += rightPosition.distance;
-    }else if(rightPosition.direction.angle === "right"){
-      direction -= rightPosition.distance;
+    direction = 100;
+    if (rightPosition.direction !== undefined) {
+        if (rightPosition.direction.angle === "left") {
+            direction += rightPosition.distance;
+        } else if (rightPosition.direction.angle === "right") {
+            direction -= rightPosition.distance;
+        }
     }
-  }
 
-  return {
-    speed: speed,
-    direction: direction
-  };
+    return {
+        speed: speed,
+        direction: direction
+    };
 }
