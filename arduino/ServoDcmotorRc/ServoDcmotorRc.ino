@@ -65,7 +65,7 @@ int servoPosBlue = 100;     //Bluetooth int 200-100=Left 100-0=Right
 int motorDCForward = 0;     //actual DC forward
 int motorDCBackward = 0;    //actual DC backward
 int motorBlue = 100;        //Bluetooth int 200-100=forward speed 100-0=backward speed
-int pwmMax = 50;            //Max pwm signal to DCmotor
+int pwmMax = 100;            //Max pwm signal to DCmotor
 
 /* Bluetooth */
 #include <ArduinoJson.h>
@@ -104,10 +104,10 @@ void loop() {
     myServo.write(servoPosInit);                          //Writes initial pos to servo
   }
   /* H-bridge */
-  if (motorBlue < 100) {
+  if (motorBlue < 100 && forwardSensor.getDistance() > 20) {
     motorDCBackward = map(motorBlue, 100, 0, 0, pwmMax);  //Maps int from 100-0 to 0-pwmMax(0-255)
     analogWrite(IN_1, motorDCBackward);                   //Writes mappet speed to DCmotor
-  } else if (motorBlue > 100) {
+  } else if (motorBlue > 100 && backwardSensor.getDistance() > 20) {
     motorDCForward = map(motorBlue, 100, 200, 0, pwmMax); //Maps int from 100-200 to 0-pwmMax(0-255)
     analogWrite(IN_2, motorDCForward);                    //Writes mappet speed to DCmotor
   } else {
