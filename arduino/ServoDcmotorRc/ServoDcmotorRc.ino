@@ -46,7 +46,6 @@ class DistanceSensor {
 };
 
 
-
 /* Servo setup */
 #include <Servo.h>
 Servo myServo;              //create servo object to control a servo
@@ -93,13 +92,6 @@ void setup() {
   digitalWrite(INH_2, 1);     //H-brige sets sleep mode to off on bridge 2
 }
 
-// Reset INPUT on Bridge 1 and 2
-void resetPorts()
-{
-  digitalWrite(IN_1, 0);
-  digitalWrite(IN_2, 0);
-}
-
 void loop() {
   /* Servo */
   if (servoPosBlue < 100) {
@@ -126,9 +118,9 @@ void loop() {
   /* Bluetooth */
   StaticJsonBuffer<200> jsonBuffer;
   String t;                                      //string to hold data from BT module
-  //while(Serial.available()) {                    //keep reading bytes while they are still more in the buffer
-  //  t += (char)Serial.read();                    //read byte, convert to char, and append it to string
-  //}
+  while(Serial.available()) {                    //keep reading bytes while they are still more in the buffer
+    t += (char)Serial.read();                    //read byte, convert to char, and append it to string
+  }
 
   if (t.length()) {                              //if string is not empty do the following
     char data[200];
@@ -142,10 +134,11 @@ void loop() {
 }
 
 
-
-/* -------------Functions------------- */
-
-/* Echo function */
-
+// Reset INPUT on Bridge 1 and 2
+void resetPorts()
+{
+  digitalWrite(IN_1, 0);
+  digitalWrite(IN_2, 0);
+}
 
 
