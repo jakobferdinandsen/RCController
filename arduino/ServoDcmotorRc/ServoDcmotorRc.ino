@@ -24,6 +24,10 @@
   int speed = 100;
   int direction = 100;
 
+/* Echo */
+  int echo1 = 0;                  //Sensor forward in cm
+  int echo2 = 0;                  //Sensor reverse in cm
+
 void setup() {
 // put your setup code here, to run once:
     Serial.begin(115200);     //Starts bluetooth serial komunication
@@ -69,6 +73,7 @@ void loop() {
     resetPorts();
   }
 
+
   /* Bluetooth */
 StaticJsonBuffer<200> jsonBuffer;
   String t;                                      //string to hold data from BT module 
@@ -85,23 +90,14 @@ StaticJsonBuffer<200> jsonBuffer;
       servoPosBlue = json["direction"];
     }
   }
- // delay(10);
- 
-  int echo1; //Sensor forward in cm
-  echo1 = echo(4, 2); // Run the funktion echo, trigPin 4 and echoPin 2
-   Serial.print("1=");
-   Serial.print(echo1);
-   Serial.print("cm ");
-   Serial.print(" : ");
-      delay(100);
-  int echo2; //Sensor reverse in cm
-  echo2 = echo(8, 7); // Run the funktion echo, trigPin 8 and echoPin 7
-   Serial.print("2=");
-   Serial.print(echo(8,7)); //Metoder kan godt kaldes inde i print metoden, den printer bare hvad end metoden returnerer
-   Serial.print("cm");
-   Serial.println(" ");
-      delay(100);
+
+
+  /* Echo */
+  echo1 = echo(4, 2);                            // Run the funktion echo, trigPin 4 and echoPin 2
+  echo2 = echo(8, 7);                            // Run the funktion echo, trigPin 8 and echoPin 7
 }
+
+
 
   /* -------------Functions------------- */
 
