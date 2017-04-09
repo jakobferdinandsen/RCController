@@ -92,6 +92,13 @@ void setup() {
   digitalWrite(INH_2, 1);     //H-brige sets sleep mode to off on bridge 2
 }
 
+// Reset INPUT on Bridge 1 and 2
+void resetPorts()
+{
+  digitalWrite(IN_1, 0);
+  digitalWrite(IN_2, 0);
+}
+
 void loop() {
   /* Servo */
   if (servoPosBlue < 100) {
@@ -104,16 +111,16 @@ void loop() {
     myServo.write(servoPosInit);                          //Writes initial pos to servo
   }
   /* H-bridge */
-  if (motorBlue < 100 && forwardSensor.getDistance() > 20) {
+  if (motorBlue < 100 && backwardSensor.getDistance() > 20) {
     motorDCBackward = map(motorBlue, 100, 0, 0, pwmMax);  //Maps int from 100-0 to 0-pwmMax(0-255)
     analogWrite(IN_1, motorDCBackward);                   //Writes mappet speed to DCmotor
-  } else if (motorBlue > 100 && backwardSensor.getDistance() > 20) {
+  } else if (motorBlue > 100 && forwardSensor.getDistance() > 20) {
     motorDCForward = map(motorBlue, 100, 200, 0, pwmMax); //Maps int from 100-200 to 0-pwmMax(0-255)
     analogWrite(IN_2, motorDCForward);                    //Writes mappet speed to DCmotor
   } else {
     resetPorts();
   }
-
+  
 
   /* Bluetooth */
   StaticJsonBuffer<200> jsonBuffer;
@@ -131,14 +138,6 @@ void loop() {
       servoPosBlue = json["direction"];
     }
   }
+  delay(10);
 }
-
-
-// Reset INPUT on Bridge 1 and 2
-void resetPorts()
-{
-  digitalWrite(IN_1, 0);
-  digitalWrite(IN_2, 0);
-}
-
 
