@@ -132,8 +132,8 @@ void setup() {
 }
 
 
-void resetPorts(){
-/* Reset input on H-bridge 1 and 2 */
+void resetPorts() {
+  /* Reset input on H-bridge 1 and 2 */
   digitalWrite(IN_1, 0);
   digitalWrite(IN_2, 0);
 }
@@ -158,10 +158,10 @@ void loop() {
 
   /*Drive mode*/
   switch (driveMode) {
-    case 1:   //Drive in cirkel
+    case 1:   //Drive in square
       ;
       break;
-    case 2:   //Drive in square
+    case 2:   //Drive in rectangel
       ;
       break;
     case 3:   //Drive in eight padden
@@ -186,11 +186,11 @@ void loop() {
 
   /* H-bridge */
   /*Backward*/
-  motorSpeedBackward = map(motorControl, 100, 0, 0, pwmMax); //Maps int motorSpeedBluetooth from 100-0 to 0-pwmMax(0-255)
-  brakeDistanceBackward = (pow(motorSpeedBackward, 3) * -0.1) + (pow(motorSpeedBackward, 2) * 35) + 10; //f(X) = (X^3*Y)+(X^2*Z)+10
+  motorSpeedBackward = map(motorControl, 100, 0, 0, pwmMax); //Maps int motorControl from 100-0 to 0-pwmMax(0-255)
+  brakeDistanceBackward = (motorSpeedBackward * 15) / 10 + 8; //Brake distance in Cm
   /*Forward*/
-  motorSpeedForward = map(motorControl, 100, 200, 0, pwmMax); //Maps int motorSpeedBluetooth from 100-0 to 0-pwmMax(0-255)
-  brakeDistanceForward = (-0.1 * pow(motorSpeedForward, 3)) + (35 * pow(motorSpeedForward, 2)) + 10;    //f(X) = (Y*X^3)+(Z*X^2)+10
+  motorSpeedForward = map(motorControl, 100, 200, 0, pwmMax); //Maps int motorControl from 100-0 to 0-pwmMax(0-255)
+  brakeDistanceForward = (motorSpeedForward * 15) / 10 + 8;   //Brake distance in CM
   /*Speed control*/
   if (motorControl < 100 && backwardSensor.getDistance() > brakeDistanceBackward) {
     analogWrite(IN_1, motorSpeedBackward);                             //Writes mapped speed to DCmotor
