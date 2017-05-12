@@ -73,14 +73,17 @@ class MagneticCompass {
     }
 };
 
+/* Drive mode setup*/
+int driveMode = 0; //Controls the different drive modes
 
 /* Servo setup */
 #include <Servo.h>
-Servo myServo;              //create servo object to control a servo
-int servoPosRight = 0;      //Servo position right
-int servoPosLeft = 0;       //Servo position left
-int servoPosInit = 89;      //Initialising servo position
-int servoPosBlue = 100;     //Bluetooth int 200-100=Left 100-0=Right
+Servo myServo;                    //create servo object to control a servo
+int servoPosRight = 0;            //Servo position right
+int servoPosLeft = 0;             //Servo position left
+int servoPosInit = 89;            //Initialising servo position
+int servoControl = 100;           //Servo control int 200-100=Left 100-0=Right
+int servoControlBlueTooth = 100;  //Servo control bluetooth same attributes as srvoControl
 
 /* H-bridge setup */
 #define  IS_1  0
@@ -90,21 +93,26 @@ int servoPosBlue = 100;     //Bluetooth int 200-100=Left 100-0=Right
 #define  INH_1 12
 #define  INH_2 13
 
-int motorDCForward = 0;     //actual DC forward
-int motorDCBackward = 0;    //actual DC backward
-int motorBlue = 100;        //Bluetooth int 200-100=forward speed 100-0=backward speed
-int pwmMax = 100;           //Max pwm signal to DCmotor
+long brakeDistanceBackward = 0; //Brake distance in ??
+long brakeDistanceForward = 0;  //Brake distance in ??
+int motorSpeedForward = 0;      //Motor speed forward PWM
+int motorSpeedBackward = 0;     //Motor speed backward PWM
+int motorControl = 100;         //Motor control int 200-100=forward speed 100-0=backward speed
+int motorControlBluetooth = 100;//Motor bluetooth control same attributes as motorControl
+int motorControlIntern = 100;   //Motor intern control same attributes as motorControl
+int pwmMax = 100;               //Max pwm signal to DCmotor
 
-/* Bluetooth */
+
+/* Bluetooth setup*/
 #include <ArduinoJson.h>
 int speed = 100;
 int direction = 100;
 
-/* Sensors */
+/* Distance sensors setup*/
 DistanceSensor forwardSensor(4, 2);
 DistanceSensor backwardSensor(8, 7);
 
-/* Mangnetic Compass*/
+/* Mangnetic compass setup*/
 MangneticCompass compassDegrees(0x60);
 
 void setup() {
@@ -123,9 +131,9 @@ void setup() {
   digitalWrite(INH_2, 1);     //H-brige sets sleep mode to off on bridge 2
 }
 
-// Reset INPUT on Bridge 1 and 2
-void resetPorts()
-{
+
+void resetPorts(){
+/* Reset input on H-bridge 1 and 2 */
   digitalWrite(IN_1, 0);
   digitalWrite(IN_2, 0);
 }
@@ -143,30 +151,53 @@ void loop() {
     t.toCharArray(data, 200);
     JsonObject& json = jsonBuffer.parseObject(data);
     if (json.success()) {
-      motorBlue = json["speed"];
-      servoPosBlue = json["direction"];
+      motorControlBluetooth = json["speed"];
+      servoControlBluetooth = json["direction"];
     }
   }
-  delay(5);
+
+  /*Drive mode*/
+  switch (driveMode) {
+    case 1:   //Drive in cirkel
+      ;
+      break;
+    case 2:   //Drive in square
+      ;
+      break;
+    case 3:   //Drive in eight padden
+      ;
+      break;
+    case 4:   //Drive in manuel mode
+      servoControl = servoControlBluetooth;
+      motorControl = motorControlBluetooth;
+      break;
+  }
 
   /* Servo */
-  if (servoPosBlue < 100) {
-    servoPosRight = map(servoPosBlue, 100, 0, 89, 65);    //Maps int from 100-0 to 89-65
+  if (servoControl < 100) {
+    servoPosRight = map(servoControl, 100, 0, 89, 65);    //Maps int from 100-0 to 89-65
     myServo.write(servoPosRight);                         //Writes mapped pos to servo
-  } else if (servoPosBlue > 100) {
-    servoPosLeft = map(servoPosBlue, 100, 200, 89, 113);  //Maps int from 100-200 to 89-113
+  } else if (servoControl > 100) {
+    servoPosLeft = map(servoControl, 100, 200, 89, 113);  //Maps int from 100-200 to 89-113
     myServo.write(servoPosLeft);                          //Writes mapped pos to servo
   } else {
     myServo.write(servoPosInit);                          //Writes initial pos to servo
   }
+
   /* H-bridge */
-  if (motorBlue < 100 && backwardSensor.getDistance() > 20) {
-    motorDCBackward = map(motorBlue, 100, 0, 0, pwmMax);  //Maps int from 100-0 to 0-pwmMax(0-255)
-    analogWrite(IN_1, motorDCBackward);                   //Writes mapped speed to DCmotor
-  } else if (motorBlue > 100 && forwardSensor.getDistance() > 20) {
-    motorDCForward = map(motorBlue, 100, 200, 0, pwmMax); //Maps int from 100-200 to 0-pwmMax(0-255)
-    analogWrite(IN_2, motorDCForward);                    //Writes mapped speed to DCmotor
+  /*Backward*/
+  motorSpeedBackward = map(motorControl, 100, 0, 0, pwmMax); //Maps int motorSpeedBluetooth from 100-0 to 0-pwmMax(0-255)
+  brakeDistanceBackward = (pow(motorSpeedBackward, 3) * -0.1) + (pow(motorSpeedBackward, 2) * 35) + 10; //f(X) = (X^3*Y)+(X^2*Z)+10
+  /*Forward*/
+  motorSpeedForward = map(motorControl, 100, 200, 0, pwmMax); //Maps int motorSpeedBluetooth from 100-0 to 0-pwmMax(0-255)
+  brakeDistanceForward = (-0.1 * pow(motorSpeedForward, 3)) + (35 * pow(motorSpeedForward, 2)) + 10;    //f(X) = (Y*X^3)+(Z*X^2)+10
+  /*Speed control*/
+  if (motorControl < 100 && backwardSensor.getDistance() > brakeDistanceBackward) {
+    analogWrite(IN_1, motorSpeedBackward);                             //Writes mapped speed to DCmotor
+  } else if (motorControl > 100 && forwardSensor.getDistance() > brakeDistanceForward) {
+    analogWrite(IN_2, motorSpeedForward);                              //Writes mapped speed to DCmotor
   } else {
     resetPorts();
   }
+  delay(5);
 }
