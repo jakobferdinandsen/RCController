@@ -100,32 +100,10 @@ void resetPorts()
 }
 
 void loop() {
-  /* Servo */
-  if (servoPosBlue < 100) {
-    servoPosRight = map(servoPosBlue, 100, 0, 89, 65);    //Maps int from 100-0 to 89-65
-    myServo.write(servoPosRight);                         //Writes mappet pos to servo
-  } else if (servoPosBlue > 100) {
-    servoPosLeft = map(servoPosBlue, 100, 200, 89, 113);  //Maps int from 100-200 to 89-113
-    myServo.write(servoPosLeft);                          //Writes mappet pos to servo
-  } else {
-    myServo.write(servoPosInit);                          //Writes initial pos to servo
-  }
-  /* H-bridge */
-  if (motorBlue < 100 && backwardSensor.getDistance() > 20) {
-    motorDCBackward = map(motorBlue, 100, 0, 0, pwmMax);  //Maps int from 100-0 to 0-pwmMax(0-255)
-    analogWrite(IN_1, motorDCBackward);                   //Writes mappet speed to DCmotor
-  } else if (motorBlue > 100 && forwardSensor.getDistance() > 20) {
-    motorDCForward = map(motorBlue, 100, 200, 0, pwmMax); //Maps int from 100-200 to 0-pwmMax(0-255)
-    analogWrite(IN_2, motorDCForward);                    //Writes mappet speed to DCmotor
-  } else {
-    resetPorts();
-  }
-  
-
   /* Bluetooth */
   StaticJsonBuffer<200> jsonBuffer;
   String t;                                      //string to hold data from BT module
-  while(Serial.available()) {                    //keep reading bytes while they are still more in the buffer
+  while (Serial.available()) {                   //keep reading bytes while they are still more in the buffer
     t += (char)Serial.read();                    //read byte, convert to char, and append it to string
   }
 
@@ -138,6 +116,26 @@ void loop() {
       servoPosBlue = json["direction"];
     }
   }
-  delay(10);
-}
+  delay(5);
 
+  /* Servo */
+  if (servoPosBlue < 100) {
+    servoPosRight = map(servoPosBlue, 100, 0, 89, 65);    //Maps int from 100-0 to 89-65
+    myServo.write(servoPosRight);                         //Writes mapped pos to servo
+  } else if (servoPosBlue > 100) {
+    servoPosLeft = map(servoPosBlue, 100, 200, 89, 113);  //Maps int from 100-200 to 89-113
+    myServo.write(servoPosLeft);                          //Writes mapped pos to servo
+  } else {
+    myServo.write(servoPosInit);                          //Writes initial pos to servo
+  }
+  /* H-bridge */
+  if (motorBlue < 100 && backwardSensor.getDistance() > 20) {
+    motorDCBackward = map(motorBlue, 100, 0, 0, pwmMax);  //Maps int from 100-0 to 0-pwmMax(0-255)
+    analogWrite(IN_1, motorDCBackward);                   //Writes mapped speed to DCmotor
+  } else if (motorBlue > 100 && forwardSensor.getDistance() > 20) {
+    motorDCForward = map(motorBlue, 100, 200, 0, pwmMax); //Maps int from 100-200 to 0-pwmMax(0-255)
+    analogWrite(IN_2, motorDCForward);                    //Writes mapped speed to DCmotor
+  } else {
+    resetPorts();
+  }
+}
