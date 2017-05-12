@@ -45,6 +45,34 @@ class DistanceSensor {
     }
 };
 
+#include <Wire.h>
+class MagneticCompass {
+  private:
+
+    int address;
+
+  public:
+
+    MagneticCompass(int address) {
+      this->address = address;
+    }
+    int getDegrees() {
+      byte highByte;
+      byte lowByte;
+
+      Wire.beginTransmission(address);      //starts communication with cmps03
+      Wire.write(2);                        //Sends the register we wish to read
+      Wire.endTransmission();
+
+      Wire.requestFrom(address, 2);        //requests high byte
+      while (Wire.available() < 2);        //while there is a byte to receive
+      highByte = Wire.read();              //reads the byte as an integer
+      lowByte = Wire.read();
+      int bearing = ((highByte << 8) + lowByte) / 10;
+      return bearing;
+    }
+};
+
 
 /* Servo setup */
 #include <Servo.h>
@@ -65,7 +93,7 @@ int servoPosBlue = 100;     //Bluetooth int 200-100=Left 100-0=Right
 int motorDCForward = 0;     //actual DC forward
 int motorDCBackward = 0;    //actual DC backward
 int motorBlue = 100;        //Bluetooth int 200-100=forward speed 100-0=backward speed
-int pwmMax = 100;            //Max pwm signal to DCmotor
+int pwmMax = 100;           //Max pwm signal to DCmotor
 
 /* Bluetooth */
 #include <ArduinoJson.h>
@@ -75,6 +103,9 @@ int direction = 100;
 /* Sensors */
 DistanceSensor forwardSensor(4, 2);
 DistanceSensor backwardSensor(8, 7);
+
+/* Mangnetic Compass*/
+MangneticCompass compassDegrees(0x60);
 
 void setup() {
   // put your setup code here, to run once:
