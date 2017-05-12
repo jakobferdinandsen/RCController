@@ -68,8 +68,7 @@ class MagneticCompass {
       while (Wire.available() < 2);        //while there is a byte to receive
       highByte = Wire.read();              //reads the byte as an integer
       lowByte = Wire.read();
-      int bearing = ((highByte << 8) + lowByte) / 10;
-      return bearing;
+      return ((highByte << 8) + lowByte) / 10;
     }
 };
 
@@ -83,7 +82,7 @@ int servoPosRight = 0;            //Servo position right
 int servoPosLeft = 0;             //Servo position left
 int servoPosInit = 89;            //Initialising servo position
 int servoControl = 100;           //Servo control int 200-100=Left 100-0=Right
-int servoControlBlueTooth = 100;  //Servo control bluetooth same attributes as srvoControl
+int servoControlBluetooth = 100;  //Servo control bluetooth same attributes as srvoControl
 
 /* H-bridge setup */
 #define  IS_1  0
@@ -113,7 +112,7 @@ DistanceSensor forwardSensor(4, 2);
 DistanceSensor backwardSensor(8, 7);
 
 /* Mangnetic compass setup*/
-MangneticCompass compassDegrees(0x60);
+MagneticCompass compassDegrees(0x60);
 
 void setup() {
   // put your setup code here, to run once:
@@ -164,7 +163,7 @@ void loop() {
     case 2:   //Drive in rectangel
       ;
       break;
-    case 3:   //Drive in eight padden
+    case 3:   //Drive in figure eight pattern
       ;
       break;
     case 4:   //Drive in manuel mode
