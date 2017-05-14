@@ -32,6 +32,7 @@ int pwmMax = 100;                 //Max pwm signal to DCmotor
 /* Bluetooth setup*/
 int speed = 100;                  //Json integer for speed
 int direction = 100;              //Json integer for direction
+int control = 0;                  //Json integer for control
 
 /* Distance sensors setup*/
 DistanceSensor forwardSensor(4, 2);   //Setup for forward sensor with trigPin 4, echoPin 2
@@ -78,6 +79,7 @@ void loop() {
     if (json.success()) {
       motorControlBluetooth = json["speed"];
       servoControlBluetooth = json["direction"];
+      driveMode = json["control"];
     }
   }
 
