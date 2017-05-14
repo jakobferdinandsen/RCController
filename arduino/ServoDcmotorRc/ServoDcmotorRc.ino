@@ -1,82 +1,13 @@
-class DistanceSensor {
-  private:
-
-    int trigPin;
-    int echoPin;
-
-  public:
-
-    DistanceSensor(int trigPin, int echoPin) {
-      this->trigPin = trigPin;
-      this->echoPin = echoPin;
-    }
-
-    int getDistance() {
-      /* establish variables for duration of the ping,
-         and the distance result in inches and centimeters: */
-      long duration, cm;
-
-      /* The sensor is triggered by a HIGH pulse of 10 or more microseconds.
-         Give a short LOW pulse beforehand to ensure a clean HIGH pulse: */
-      pinMode(trigPin, OUTPUT);
-      digitalWrite(trigPin, LOW);
-      delayMicroseconds(2);
-      digitalWrite(trigPin, HIGH);
-      delayMicroseconds(10);
-      digitalWrite(trigPin, LOW);
-
-      /* Read the signal from the sensor: a HIGH pulse whose
-         duration is the time (in microseconds) from the sending
-         of the ping to the reception of its echo off of an object.*/
-      pinMode(echoPin, INPUT);
-      duration = pulseIn(echoPin, HIGH);
-
-      /* convert the time into a distance */
-      cm = microsecondsToCentimeters(duration);
-      return cm;
-    }
-
-    long microsecondsToCentimeters(long microseconds)
-    {
-      /* The speed of sound is 340 m/s or 29 microseconds per centimeter.
-         The ping travels out and back, so to find the distance of the
-         object we take half of the distance travelled. */
-      return microseconds / 29 / 2;
-    }
-};
-
-#include <Wire.h>
-class MagneticCompass {
-  private:
-
-    int address;
-
-  public:
-
-    MagneticCompass(int address) {
-      this->address = address;
-    }
-    int getDegrees() {
-      byte highByte;
-      byte lowByte;
-
-      Wire.beginTransmission(address);      //starts communication with cmps03
-      Wire.write(2);                        //Sends the register we wish to read
-      Wire.endTransmission();
-
-      Wire.requestFrom(address, 2);        //requests high byte
-      while (Wire.available() < 2);        //while there is a byte to receive
-      highByte = Wire.read();              //reads the byte as an integer
-      lowByte = Wire.read();
-      return ((highByte << 8) + lowByte) / 10;
-    }
-};
+#include <MagneticCompass.h>      //Library that contains magnetic compass funktions
+#include <Wire.h>                 //Library for comunication with magnetic compass
+#include <DistanceSensor.h>       //Library that contains distance sensor funktions
+#include <Servo.h>                //Library that contains servo funktions
+#include <ArduinoJson.h>          //Library that contains json funktions
 
 /* Drive mode setup*/
 int driveMode = 0; //Controls the different drive modes
 
 /* Servo setup */
-#include <Servo.h>
 Servo myServo;                    //create servo object to control a servo
 int servoPosRight = 0;            //Servo position right
 int servoPosLeft = 0;             //Servo position left
@@ -91,7 +22,6 @@ int servoControlBluetooth = 100;  //Servo control bluetooth same attributes as s
 #define  IN_2  11
 #define  INH_1 12
 #define  INH_2 13
-
 long brakeDistanceBackward = 0; //Brake distance in ??
 long brakeDistanceForward = 0;  //Brake distance in ??
 int motorSpeedForward = 0;      //Motor speed forward PWM
@@ -101,9 +31,7 @@ int motorControlBluetooth = 100;//Motor bluetooth control same attributes as mot
 int motorControlIntern = 100;   //Motor intern control same attributes as motorControl
 int pwmMax = 100;               //Max pwm signal to DCmotor
 
-
 /* Bluetooth setup*/
-#include <ArduinoJson.h>
 int speed = 100;
 int direction = 100;
 
@@ -116,7 +44,8 @@ MagneticCompass compassDegrees(0x60);
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(115200);     //Starts bluetooth serial komunication
+  Wire.begin();               //Starts comunication with magnetic compass
+  Serial.begin(115200);       //Starts bluetooth serial comunication
   /* Servo */
   myServo.attach(9);          //attaches the servo on pin 9 to the servo object
   myServo.write(servoPosInit);//tell servo to go to position, venstre = 110, midt = 89, højre = 65
@@ -129,7 +58,6 @@ void setup() {
   digitalWrite(INH_1, 1);     //H-brige sets sleep mode to off on bridge 1
   digitalWrite(INH_2, 1);     //H-brige sets sleep mode to off on bridge 2
 }
-
 
 void resetPorts() {
   /* Reset input on H-bridge 1 and 2 */
