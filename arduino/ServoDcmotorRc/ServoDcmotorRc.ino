@@ -1,3 +1,4 @@
+/* Include */
 #include <MagneticCompass.h>      //Library that contains magnetic compass funktions
 #include <Wire.h>                 //Library for comunication with magnetic compass
 #include <DistanceSensor.h>       //Library that contains distance sensor funktions
@@ -28,11 +29,6 @@ int motorControl = 100;           //Motor control int 200-100=forward speed 100-
 int motorControlBluetooth = 100;  //Motor bluetooth control same attributes as motorControl
 int motorControlIntern = 100;     //Motor intern control same attributes as motorControl
 int pwmMax = 100;                 //Max pwm signal to DCmotor
-
-/* Bluetooth setup*/
-int speed = 100;                  //Json integer for speed
-int direction = 100;              //Json integer for direction
-int control = 0;                  //Json integer for control
 
 /* Distance sensors setup*/
 DistanceSensor forwardSensor(4, 2);   //Setup for forward sensor with trigPin 4, echoPin 2
