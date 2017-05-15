@@ -1,124 +1,70 @@
-class DistanceSensor {
-  private:
+/* Include */
+#include <MagneticCompass.h>      //Library that contains magnetic compass funktions
+#include <Wire.h>                 //Library for comunication with magnetic compass
+#include <DistanceSensor.h>       //Library that contains distance sensor funktions
+#include <Servo.h>                //Library that contains servo funktions
+#include <ArduinoJson.h>          //Library that contains json funktions
 
-    int trigPin;
-    int echoPin;
-
-  public:
-
-    DistanceSensor(int trigPin, int echoPin) {
-      this->trigPin = trigPin;
-      this->echoPin = echoPin;
-    }
-
-    int getDistance() {
-      /* establish variables for duration of the ping,
-         and the distance result in inches and centimeters: */
-      long duration, cm;
-
-      /* The sensor is triggered by a HIGH pulse of 10 or more microseconds.
-         Give a short LOW pulse beforehand to ensure a clean HIGH pulse: */
-      pinMode(trigPin, OUTPUT);
-      digitalWrite(trigPin, LOW);
-      delayMicroseconds(2);
-      digitalWrite(trigPin, HIGH);
-      delayMicroseconds(10);
-      digitalWrite(trigPin, LOW);
-
-      /* Read the signal from the sensor: a HIGH pulse whose
-         duration is the time (in microseconds) from the sending
-         of the ping to the reception of its echo off of an object.*/
-      pinMode(echoPin, INPUT);
-      duration = pulseIn(echoPin, HIGH);
-
-      /* convert the time into a distance */
-      cm = microsecondsToCentimeters(duration);
-      return cm;
-    }
-
-    long microsecondsToCentimeters(long microseconds)
-    {
-      /* The speed of sound is 340 m/s or 29 microseconds per centimeter.
-         The ping travels out and back, so to find the distance of the
-         object we take half of the distance travelled. */
-      return microseconds / 29 / 2;
-    }
-};
-
+/* Drive mode setup*/
+int driveMode = 0;                //Controls the different drive modes
 
 /* Servo setup */
-#include <Servo.h>
-Servo myServo;              //create servo object to control a servo
-int servoPosRight = 0;      //Servo position right
-int servoPosLeft = 0;       //Servo position left
-int servoPosInit = 89;      //Initialising servo position
-int servoPosBlue = 100;     //Bluetooth int 200-100=Left 100-0=Right
+Servo myServo;                    //create servo object to control a servo
+int servoPosRight = 0;            //Servo position right
+int servoPosLeft = 0;             //Servo position left
+int servoPosInit = 89;            //Initialising servo position
+int servoControl = 100;           //Servo control int 200-100=Left 100-0=Right
+int servoControlBluetooth = 100;  //Servo control bluetooth same attributes as srvoControl
 
 /* H-bridge setup */
-#define  IS_1  0
-#define  IS_2  1
-#define  IN_1  3
-#define  IN_2  11
-#define  INH_1 12
-#define  INH_2 13
+#define  IN_1  3                  //Defining IN_1 as pin 3, PWM signal for forward movement(bridge 1)
+#define  IN_2  11                 //Defining IN_2 as pin 11, PWM signal for backward movement(bridge 2)
+#define  INH_1 12                 //Defining INH_1 as pin 12, inhibit signal for bridge 1 
+#define  INH_2 13                 //Defining INH_1 as pin 13, inhibit signal for bridge 2
+long brakeDistanceBackward = 0;   //Brake distance in CM
+long brakeDistanceForward = 0;    //Brake distance in CM
+int motorSpeedForward = 0;        //Motor speed forward PWM
+int motorSpeedBackward = 0;       //Motor speed backward PWM
+int motorControl = 100;           //Motor control int 200-100=forward speed 100-0=backward speed
+int motorControlBluetooth = 100;  //Motor bluetooth control same attributes as motorControl
+int motorControlIntern = 100;     //Motor intern control same attributes as motorControl
+int pwmMax = 100;                 //Max pwm signal to DCmotor
 
-int motorDCForward = 0;     //actual DC forward
-int motorDCBackward = 0;    //actual DC backward
-int motorBlue = 100;        //Bluetooth int 200-100=forward speed 100-0=backward speed
-int pwmMax = 50;            //Max pwm signal to DCmotor
+/* Distance sensors setup*/
+DistanceSensor forwardSensor(4, 2);   //Setup for forward sensor with trigPin 4, echoPin 2
+DistanceSensor backwardSensor(8, 7);  //Setup for backward sensor with trigPin 8, echoPin 7
 
-/* Bluetooth */
-#include <ArduinoJson.h>
-int speed = 100;
-int direction = 100;
-
-/* Sensors */
-DistanceSensor forwardSensor(4, 2);
-DistanceSensor backwardSensor(8, 7);
+/* Mangnetic compass setup*/
+MagneticCompass compassDegrees(0x60); //Setup for magnetic compass with address 0x60 (compass pin2 -> board analog5, compass pin3 -> board analog4)
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(115200);     //Starts bluetooth serial komunication
+  Wire.begin();                   //Starts comunication with magnetic compass
+  Serial.begin(115200);           //Starts bluetooth serial comunication
   /* Servo */
-  myServo.attach(9);          //attaches the servo on pin 9 to the servo object
-  myServo.write(servoPosInit);//tell servo to go to position, venstre = 110, midt = 89, højre = 65
+  myServo.attach(9);              //attaches the servo on pin 9 to the servo object
+  myServo.write(servoPosInit);    //tell servo to go to position, left = 110, middel = 89, right = 65
   /* H-Bridge */
-  pinMode(IN_1, OUTPUT);      //H-brige pinmode for IN_1
-  pinMode(IN_2, OUTPUT);      //H-brige pinmode for IN_2
-  pinMode(INH_1, OUTPUT);     //H-brige pinmode for INH_1
-  pinMode(INH_2, OUTPUT);     //H-brige pinmode for INH_2
-  resetPorts();               //H-brige reset input ports on bridge 1 and 2
-  digitalWrite(INH_1, 1);     //H-brige sets sleep mode to off on bridge 1
-  digitalWrite(INH_2, 1);     //H-brige sets sleep mode to off on bridge 2
+  pinMode(IN_1, OUTPUT);          //H-brige pinmode for IN_1
+  pinMode(IN_2, OUTPUT);          //H-brige pinmode for IN_2
+  pinMode(INH_1, OUTPUT);         //H-brige pinmode for INH_1
+  pinMode(INH_2, OUTPUT);         //H-brige pinmode for INH_2
+  resetPorts();                   //H-brige reset input ports on bridge 1 and 2
+  digitalWrite(INH_1, 1);         //H-brige sets sleep mode to off on bridge 1
+  digitalWrite(INH_2, 1);         //H-brige sets sleep mode to off on bridge 2
+}
+
+void resetPorts() {
+  /* Reset input on H-bridge 1 and 2 */
+  digitalWrite(IN_1, 0);
+  digitalWrite(IN_2, 0);
 }
 
 void loop() {
-  /* Servo */
-  if (servoPosBlue < 100) {
-    servoPosRight = map(servoPosBlue, 100, 0, 89, 65);    //Maps int from 100-0 to 89-65
-    myServo.write(servoPosRight);                         //Writes mappet pos to servo
-  } else if (servoPosBlue > 100) {
-    servoPosLeft = map(servoPosBlue, 100, 200, 89, 113);  //Maps int from 100-200 to 89-113
-    myServo.write(servoPosLeft);                          //Writes mappet pos to servo
-  } else {
-    myServo.write(servoPosInit);                          //Writes initial pos to servo
-  }
-  /* H-bridge */
-  if (motorBlue < 100) {
-    motorDCBackward = map(motorBlue, 100, 0, 0, pwmMax);  //Maps int from 100-0 to 0-pwmMax(0-255)
-    analogWrite(IN_1, motorDCBackward);                   //Writes mappet speed to DCmotor
-  } else if (motorBlue > 100) {
-    motorDCForward = map(motorBlue, 100, 200, 0, pwmMax); //Maps int from 100-200 to 0-pwmMax(0-255)
-    analogWrite(IN_2, motorDCForward);                    //Writes mappet speed to DCmotor
-  } else {
-    resetPorts();
-  }
-
-
   /* Bluetooth */
   StaticJsonBuffer<200> jsonBuffer;
   String t;                                      //string to hold data from BT module
-  while(Serial.available()) {                    //keep reading bytes while they are still more in the buffer
+  while (Serial.available()) {                   //keep reading bytes while they are still more in the buffer
     t += (char)Serial.read();                    //read byte, convert to char, and append it to string
   }
 
@@ -127,18 +73,54 @@ void loop() {
     t.toCharArray(data, 200);
     JsonObject& json = jsonBuffer.parseObject(data);
     if (json.success()) {
-      motorBlue = json["speed"];
-      servoPosBlue = json["direction"];
+      motorControlBluetooth = json["speed"];
+      servoControlBluetooth = json["direction"];
+      driveMode = json["control"];
     }
   }
+
+  /*Drive mode*/
+  switch (driveMode) {
+    case 1:                                 //Drive in square
+      ;
+      break;
+    case 2:                                 //Drive in rectangel
+      ;
+      break;
+    case 3:                                 //Drive in figure eight pattern
+      ;
+      break;
+    case 4:                                 //Drive in manuel mode
+      servoControl = servoControlBluetooth;
+      motorControl = motorControlBluetooth;
+      break;
+  }
+
+  /* Servo control*/
+  if (servoControl < 100) {
+    servoPosRight = map(servoControl, 100, 0, 89, 65);    //Maps int from 100-0 to 89-65
+    myServo.write(servoPosRight);                         //Writes mapped pos to servo
+  } else if (servoControl > 100) {
+    servoPosLeft = map(servoControl, 100, 200, 89, 113);  //Maps int from 100-200 to 89-113
+    myServo.write(servoPosLeft);                          //Writes mapped pos to servo
+  } else {
+    myServo.write(servoPosInit);                          //Writes initial pos to servo
+  }
+
+  /* H-bridge/DCmotor control*/
+  /*Backward*/
+  motorSpeedBackward = map(motorControl, 100, 0, 0, pwmMax);  //Maps int motorControl from 100-0 to 0-pwmMax(0-255)
+  brakeDistanceBackward = (motorSpeedBackward * 15) / 10 + 8; //Brake distance in CM
+  /*Forward*/
+  motorSpeedForward = map(motorControl, 100, 200, 0, pwmMax); //Maps int motorControl from 100-0 to 0-pwmMax(0-255)
+  brakeDistanceForward = (motorSpeedForward * 15) / 10 + 8;   //Brake distance in CM
+  /*Speed control*/
+  if (motorControl < 100 && backwardSensor.getDistance() > brakeDistanceBackward) {
+    analogWrite(IN_1, motorSpeedBackward);                    //Writes mapped speed to DCmotor
+  } else if (motorControl > 100 && forwardSensor.getDistance() > brakeDistanceForward) {
+    analogWrite(IN_2, motorSpeedForward);                     //Writes mapped speed to DCmotor
+  } else {
+    resetPorts();
+  }
+  delay(5);
 }
-
-
-// Reset INPUT on Bridge 1 and 2
-void resetPorts()
-{
-  digitalWrite(IN_1, 0);
-  digitalWrite(IN_2, 0);
-}
-
-

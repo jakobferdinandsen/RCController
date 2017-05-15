@@ -1,0 +1,2 @@
+MagneticCompass	KEYWORD1
+getDegrees	KEYWORD2
