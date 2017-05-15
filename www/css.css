@@ -3,6 +3,10 @@
     justify-content: center;
 }
 
+#connectButton {
+    margin-bottom: 2em;
+}
+
 .btn {
     margin: 5px;
 }

@@ -2,9 +2,9 @@ $(function () {
     setInterval(function () {
         var package = {
             speed: $('#speed').val(),
-            direction: $('#direction').val()
+            direction: $('#direction').val(),
+            control: 4
         };
-        // console.log(package);
         app.sendData(package);
 
     }, 10);
@@ -14,4 +14,3 @@ $(function () {
         console.log('mouseup');
     })
 });
-
