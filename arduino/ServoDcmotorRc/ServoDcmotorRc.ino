@@ -65,24 +65,15 @@ void resetPorts() {
 
 void loop() {
   /* Bluetooth */
-  StaticJsonBuffer<500> jsonBuffer;
-  String t;                                      //string to hold data from BT module
-  while (Serial.available()) {                   //keep reading bytes while they are still more in the buffer
-    t += (char)Serial.read();                    //read byte, convert to char, and append it to string
-  }
-
-  if (t.length()) {                              //if string is not empty do the following
-    Serial.println(t);
-    char data[500];
-    t.toCharArray(data, 500);
-    JsonObject& json = jsonBuffer.parseObject(data);
-    if (json.success()) {
-      motorControlBluetooth = json["speed"];
-      servoControlBluetooth = json["direction"];
-      driveMode = json["control"];
-      Serial.println(driveMode);
-    }
-
+  StaticJsonBuffer<200> jsonBuffer;
+  JsonObject& json = jsonBuffer.parseObject(Serial);
+  if (json.success()) {
+    motorControlBluetooth = json["speed"];
+    servoControlBluetooth = json["direction"];
+    driveMode = json["control"];
+    Serial.println(motorControlBluetooth);
+    Serial.println(servoControlBluetooth);
+    Serial.println(driveMode);
   }
 
   /*Drive mode*/
@@ -90,7 +81,6 @@ void loop() {
     case 0:                                 //STOP!
       servoControl = 100;
       motorControl = 100;
-      Serial.println(driveMode);
       break;
     case 1:                                 //Drive in square
       if (previousMode != driveMode) {
@@ -106,20 +96,11 @@ void loop() {
       //  }
 
 
-      Serial.println(driveMode);
-      Serial.println(startDegrees);
-
-
-
+      ;
       break;
     case 2:                                 //Drive in rectangel
-      Serial.println(driveMode);
       break;
     case 3:                                 //Drive in figure eight pattern
-      Serial.println(driveMode);
-
-
-
       ;
       break;
     case 4:                                 //Drive in manuel mode
