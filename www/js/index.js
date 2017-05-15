@@ -24,21 +24,13 @@ var app = {
         // this function is called only
         //if isEnabled(), below, returns success:
         var listPorts = function () {
-            // list the available BT ports:
-            bluetoothSerial.list(
-                function (results) {
-                    app.display(JSON.stringify(results));
-                },
-                function (error) {
-                    app.display(JSON.stringify(error));
-                }
-            );
-        }
+
+        };
 
         // if isEnabled returns failure, this function is called:
         var notEnabled = function () {
             app.display("Bluetooth is not enabled.")
-        }
+        };
 
         // check if Bluetooth is on:
         bluetoothSerial.isEnabled(
@@ -82,7 +74,7 @@ var app = {
         // here's the real action of the manageConnection function:
         bluetoothSerial.isConnected(disconnect, connect);
     },
-    sendData: function (leftPosition, rightPosition) {
+    sendData: function (package) {
         var failure = function () {
             alert("Failed writing data to Bluetooth peripheral");
         };
@@ -92,9 +84,7 @@ var app = {
             app.display("Sent data successfully");
         };
 
-        var data = getAxes(leftPosition, rightPosition);
-
-        bluetoothSerial.write(JSON.stringify(data), success, failure);
+        bluetoothSerial.write(JSON.stringify(package), success, failure);
     },
     /*
      subscribes to a Bluetooth serial listener for newline
@@ -157,26 +147,3 @@ var app = {
     }
 };      // end of app
 
-function getAxes(leftPosition, rightPosition) {
-    speed = 100;
-    if (leftPosition.direction !== undefined) {
-        if (leftPosition.direction.angle === "up") {
-            speed += leftPosition.distance;
-        } else if (leftPosition.direction.angle === "down") {
-            speed -= leftPosition.distance;
-        }
-    }
-    direction = 100;
-    if (rightPosition.direction !== undefined) {
-        if (rightPosition.direction.angle === "left") {
-            direction += rightPosition.distance;
-        } else if (rightPosition.direction.angle === "right") {
-            direction -= rightPosition.distance;
-        }
-    }
-
-    return {
-        speed: speed,
-        direction: direction
-    };
-}
