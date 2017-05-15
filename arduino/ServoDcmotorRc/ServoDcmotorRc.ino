@@ -6,7 +6,9 @@
 #include <ArduinoJson.h>          //Library that contains json funktions
 
 /* Drive mode setup*/
-int driveMode = 0;                //Controls the different drive modes
+int driveMode = 4;                //Controls the different drive modes
+int startDegrees = 0;             //Used to control when to turn in the different cases
+int nextDegrees = 0;              //Used to define the next turn in the different cases
 
 /* Servo setup */
 Servo myServo;                    //create servo object to control a servo
@@ -14,7 +16,7 @@ int servoPosRight = 0;            //Servo position right
 int servoPosLeft = 0;             //Servo position left
 int servoPosInit = 89;            //Initialising servo position
 int servoControl = 100;           //Servo control int 200-100=Left 100-0=Right
-int servoControlBluetooth = 100;  //Servo control bluetooth same attributes as srvoControl
+int servoControlBluetooth = 100;  //Servo control bluetooth same attributes as servoControl
 
 /* H-bridge setup */
 #define  IN_1  3                  //Defining IN_1 as pin 3, PWM signal for forward movement(bridge 1)
@@ -28,7 +30,7 @@ int motorSpeedBackward = 0;       //Motor speed backward PWM
 int motorControl = 100;           //Motor control int 200-100=forward speed 100-0=backward speed
 int motorControlBluetooth = 100;  //Motor bluetooth control same attributes as motorControl
 int motorControlIntern = 100;     //Motor intern control same attributes as motorControl
-int pwmMax = 100;                 //Max pwm signal to DCmotor
+int pwmMax = 255;                 //Max PWM signal to DCmotor
 
 /* Distance sensors setup*/
 DistanceSensor forwardSensor(4, 2);   //Setup for forward sensor with trigPin 4, echoPin 2
@@ -75,14 +77,23 @@ void loop() {
     if (json.success()) {
       motorControlBluetooth = json["speed"];
       servoControlBluetooth = json["direction"];
-      driveMode = json["control"];
+  //    driveMode = json["control"];
     }
   }
 
   /*Drive mode*/
   switch (driveMode) {
     case 1:                                 //Drive in square
-      ;
+      startDegrees = compassDegrees.getDegrees();
+
+      if (startDegrees > 180) {
+        nextDegrees = startDegrees - 90;
+      } else {
+        nextDegrees = startDegrees + 90;
+      }
+      
+      
+      
       break;
     case 2:                                 //Drive in rectangel
       ;
@@ -110,10 +121,10 @@ void loop() {
   /* H-bridge/DCmotor control*/
   /*Backward*/
   motorSpeedBackward = map(motorControl, 100, 0, 0, pwmMax);  //Maps int motorControl from 100-0 to 0-pwmMax(0-255)
-  brakeDistanceBackward = (motorSpeedBackward * 15) / 10 + 8; //Brake distance in CM
+  brakeDistanceBackward = (motorSpeedBackward * 10) / 10 + 8; //Brake distance in CM
   /*Forward*/
   motorSpeedForward = map(motorControl, 100, 200, 0, pwmMax); //Maps int motorControl from 100-0 to 0-pwmMax(0-255)
-  brakeDistanceForward = (motorSpeedForward * 15) / 10 + 8;   //Brake distance in CM
+  brakeDistanceForward = (motorSpeedForward * 10) / 10 + 8;   //Brake distance in CM
   /*Speed control*/
   if (motorControl < 100 && backwardSensor.getDistance() > brakeDistanceBackward) {
     analogWrite(IN_1, motorSpeedBackward);                    //Writes mapped speed to DCmotor
@@ -122,5 +133,6 @@ void loop() {
   } else {
     resetPorts();
   }
-  delay(5);
+  delay(10);
+  
 }
