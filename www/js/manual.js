@@ -7,7 +7,7 @@ $(function () {
         };
         app.sendData(package);
 
-    }, 10);
+    }, 40);
 
     $(".slider").on('touchend', function () {
         $(this).val('100');
