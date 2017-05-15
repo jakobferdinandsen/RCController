@@ -9,6 +9,7 @@
 int driveMode = 4;                //Controls the different drive modes
 int startDegrees = 0;             //Used to control when to turn in the different cases
 int nextDegrees = 0;              //Used to define the next turn in the different cases
+int previousMode = 0;
 
 /* Servo setup */
 Servo myServo;                    //create servo object to control a servo
@@ -64,41 +65,61 @@ void resetPorts() {
 
 void loop() {
   /* Bluetooth */
-  StaticJsonBuffer<200> jsonBuffer;
+  StaticJsonBuffer<500> jsonBuffer;
   String t;                                      //string to hold data from BT module
   while (Serial.available()) {                   //keep reading bytes while they are still more in the buffer
     t += (char)Serial.read();                    //read byte, convert to char, and append it to string
   }
 
   if (t.length()) {                              //if string is not empty do the following
-    char data[200];
-    t.toCharArray(data, 200);
+    Serial.println(t);
+    char data[500];
+    t.toCharArray(data, 500);
     JsonObject& json = jsonBuffer.parseObject(data);
     if (json.success()) {
       motorControlBluetooth = json["speed"];
       servoControlBluetooth = json["direction"];
-  //    driveMode = json["control"];
+      driveMode = json["control"];
+      Serial.println(driveMode);
     }
+
   }
 
   /*Drive mode*/
   switch (driveMode) {
+    case 0:                                 //STOP!
+      servoControl = 100;
+      motorControl = 100;
+      Serial.println(driveMode);
+      break;
     case 1:                                 //Drive in square
-      startDegrees = compassDegrees.getDegrees();
-
-      if (startDegrees > 180) {
-        nextDegrees = startDegrees - 90;
-      } else {
+      if (previousMode != driveMode) {
+        previousMode = driveMode;
+        startDegrees = compassDegrees.getDegrees();
         nextDegrees = startDegrees + 90;
       }
-      
-      
-      
+
+      //   if (nextDegrees > 360) {
+      //    nextDegrees = nextDegrees - 360;
+      //     } else if {
+
+      //  }
+
+
+      Serial.println(driveMode);
+      Serial.println(startDegrees);
+
+
+
       break;
     case 2:                                 //Drive in rectangel
-      ;
+      Serial.println(driveMode);
       break;
     case 3:                                 //Drive in figure eight pattern
+      Serial.println(driveMode);
+
+
+
       ;
       break;
     case 4:                                 //Drive in manuel mode
@@ -123,7 +144,7 @@ void loop() {
   motorSpeedBackward = map(motorControl, 100, 0, 0, pwmMax);  //Maps int motorControl from 100-0 to 0-pwmMax(0-255)
   brakeDistanceBackward = (motorSpeedBackward * 10) / 10 + 8; //Brake distance in CM
   /*Forward*/
-  motorSpeedForward = map(motorControl, 100, 200, 0, pwmMax); //Maps int motorControl from 100-0 to 0-pwmMax(0-255)
+  motorSpeedForward = map(motorControl, 100, 200, 0, pwmMax); //Maps int motorControl from 100-200 to 0-pwmMax(0-255)
   brakeDistanceForward = (motorSpeedForward * 10) / 10 + 8;   //Brake distance in CM
   /*Speed control*/
   if (motorControl < 100 && backwardSensor.getDistance() > brakeDistanceBackward) {
@@ -133,6 +154,6 @@ void loop() {
   } else {
     resetPorts();
   }
-  delay(10);
-  
+  delay(1);
+
 }
