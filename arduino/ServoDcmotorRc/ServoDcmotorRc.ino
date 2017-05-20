@@ -12,8 +12,8 @@ int targetDegrees = 0;              //Used to define the next turn in the differ
 int previousMode = 0;
 
 long resetTime = 0;
-#define patternSpeed 40;
-#define patternTurnValue 140;
+#define patternSpeed 140;
+#define patternTurnValue 40;
 
 /* Servo setup */
 Servo myServo;                    //create servo object to control a servo
@@ -67,26 +67,32 @@ void resetPorts() {
   digitalWrite(IN_2, 0);
 }
 
-bool goRight(int current, int target){
+void turn(int target) {
+  int current = compassDegrees.getDegrees();
   bool result = true;
   int diff = 0;
-  if (target > current){
+  if (target > current) {
     diff = target - current;
-  }else{
+  } else {
     diff = current - target;
   }
   int dist = 0;
-  if (diff > 180){
+  if (diff > 180) {
     dist = 360 - diff;
-  }else{
+  } else {
     dist = diff;
   }
-  if (diff != dist){
+  if (diff != dist) {
     result = current > 180;
-  }else{
+  } else {
     result = target - current > 0;
   }
-  return result;
+
+  if (result) {
+    servoControl = 100 + patternTurnValue;
+  } else {
+    servoControl = 100 - patternTurnValue;
+  }
 }
 
 void loop() {
@@ -106,18 +112,6 @@ void loop() {
       motorControl = 100;
       break;
     case 1:                                 //Drive in square
-      if (previousMode != driveMode) {
-        previousMode = driveMode;
-        startDegrees = compassDegrees.getDegrees();
-        targetDegrees = startDegrees + 90;
-      }
-
-      //   if (nextDegrees > 360) {
-      //    nextDegrees = nextDegrees - 360;
-      //     } else if {
-
-      //  }
-
       motorControl = patternSpeed;
 
       if (resetTime == 0) {
@@ -131,12 +125,7 @@ void loop() {
           targetDegrees -= 360;
         }
       }
-      if (goRight(compassDegrees.getDegrees(), targetDegrees)){
-        servoControl = 100 + patternTurnValue;
-      }else{
-        servoControl = 100 - patternTurnValue;
-      }
-      ;
+      turn(targetDegrees);
       break;
     case 2:                                 //Drive in rectangel
       break;
