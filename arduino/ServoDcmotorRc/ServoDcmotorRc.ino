@@ -11,12 +11,15 @@ int startDegrees = 0;             //Used to control when to turn in the differen
 int nextDegrees = 0;              //Used to define the next turn in the different cases
 int previousMode = 0;
 
+int distanceForward = 0;
+int distanceBackward = 0;
+
 /* Servo setup */
 Servo myServo;                    //create servo object to control a servo
 int servoPosRight = 0;            //Servo position right
 int servoPosLeft = 0;             //Servo position left
 int servoPosInit = 89;            //Initialising servo position
-int servoControl = 100;           //Servo control int 200-100=Left 100-0=Right
+int servoControl = 100;           //Servo control int 200-100=right 100-0=left
 int servoControlBluetooth = 100;  //Servo control bluetooth same attributes as servoControl
 
 /* H-bridge setup */
@@ -24,8 +27,8 @@ int servoControlBluetooth = 100;  //Servo control bluetooth same attributes as s
 #define  IN_2  11                 //Defining IN_2 as pin 11, PWM signal for backward movement(bridge 2)
 #define  INH_1 12                 //Defining INH_1 as pin 12, inhibit signal for bridge 1 
 #define  INH_2 13                 //Defining INH_1 as pin 13, inhibit signal for bridge 2
-long brakeDistanceBackward = 0;   //Brake distance in CM
-long brakeDistanceForward = 0;    //Brake distance in CM
+long brakeDistanceBackward = 100; //Brake distance in CM
+long brakeDistanceForward = 100;  //Brake distance in CM
 int motorSpeedForward = 0;        //Motor speed forward PWM
 int motorSpeedBackward = 0;       //Motor speed backward PWM
 int motorControl = 100;           //Motor control int 200-100=forward speed 100-0=backward speed
@@ -41,7 +44,6 @@ DistanceSensor backwardSensor(8, 7);  //Setup for backward sensor with trigPin 8
 MagneticCompass compassDegrees(0x60); //Setup for magnetic compass with address 0x60 (compass pin2 -> board analog5, compass pin3 -> board analog4)
 
 void setup() {
-  // put your setup code here, to run once:
   Wire.begin();                   //Starts comunication with magnetic compass
   Serial.begin(115200);           //Starts bluetooth serial comunication
   /* Servo */
@@ -63,78 +65,91 @@ void resetPorts() {
   digitalWrite(IN_2, 0);
 }
 
-void loop() {
-  /* Bluetooth */
+void serialEvent() {
+  /*Bluetooth */
   StaticJsonBuffer<200> jsonBuffer;
   JsonObject& json = jsonBuffer.parseObject(Serial);
   if (json.success()) {
     motorControlBluetooth = json["speed"];
     servoControlBluetooth = json["direction"];
     driveMode = json["control"];
-    Serial.println(motorControlBluetooth);
-    Serial.println(servoControlBluetooth);
-    Serial.println(driveMode);
   }
-
+}
+void loop() {
   /*Drive mode*/
   switch (driveMode) {
     case 0:                                 //STOP!
-      servoControl = 100;
-      motorControl = 100;
+      resetPorts();
+      myServo.write(servoPosInit);
       break;
     case 1:                                 //Drive in square
-      if (previousMode != driveMode) {
-        previousMode = driveMode;
-        startDegrees = compassDegrees.getDegrees();
-        nextDegrees = startDegrees + 90;
-      }
-
-      //   if (nextDegrees > 360) {
-      //    nextDegrees = nextDegrees - 360;
-      //     } else if {
-
-      //  }
-
-
-      ;
+      squareMode();
       break;
     case 2:                                 //Drive in rectangel
+      rectangelMode();
       break;
     case 3:                                 //Drive in figure eight pattern
-      ;
+      eightMode();
       break;
     case 4:                                 //Drive in manuel mode
       servoControl = servoControlBluetooth;
       motorControl = motorControlBluetooth;
+      manuelMode();
       break;
   }
 
-  /* Servo control*/
-  if (servoControl < 100) {
-    servoPosRight = map(servoControl, 100, 0, 89, 65);    //Maps int from 100-0 to 89-65
-    myServo.write(servoPosRight);                         //Writes mapped pos to servo
-  } else if (servoControl > 100) {
-    servoPosLeft = map(servoControl, 100, 200, 89, 113);  //Maps int from 100-200 to 89-113
-    myServo.write(servoPosLeft);                          //Writes mapped pos to servo
-  } else {
-    myServo.write(servoPosInit);                          //Writes initial pos to servo
-  }
-
-  /* H-bridge/DCmotor control*/
-  /*Backward*/
-  motorSpeedBackward = map(motorControl, 100, 0, 0, pwmMax);  //Maps int motorControl from 100-0 to 0-pwmMax(0-255)
-  brakeDistanceBackward = (motorSpeedBackward * 10) / 10 + 8; //Brake distance in CM
-  /*Forward*/
-  motorSpeedForward = map(motorControl, 100, 200, 0, pwmMax); //Maps int motorControl from 100-200 to 0-pwmMax(0-255)
-  brakeDistanceForward = (motorSpeedForward * 10) / 10 + 8;   //Brake distance in CM
-  /*Speed control*/
-  if (motorControl < 100 && backwardSensor.getDistance() > brakeDistanceBackward) {
-    analogWrite(IN_1, motorSpeedBackward);                    //Writes mapped speed to DCmotor
-  } else if (motorControl > 100 && forwardSensor.getDistance() > brakeDistanceForward) {
-    analogWrite(IN_2, motorSpeedForward);                     //Writes mapped speed to DCmotor
-  } else {
-    resetPorts();
-  }
   delay(1);
-
 }
+
+void squareMode() {
+
+  }
+
+  void rectangelMode() {
+    distanceForward = forwardSensor.getDistance();
+    if (distanceForward > 50) {
+      analogWrite(IN_2, 50);
+    } else {
+      resetPorts();
+    }
+  }
+
+  void eightMode() {
+
+
+
+
+  }
+
+  void manuelMode() {
+    /* Servo control*/
+    if (servoControl < 100) {
+      servoPosRight = map(servoControl, 101, 200, 89, 65);    //Maps int from 100-200 to 89-65
+      myServo.write(servoPosRight);                         //Writes mapped pos to servo
+    } else if (servoControl > 100) {
+      servoPosLeft = map(servoControl, 99, 0, 89, 113);  //Maps int from 100-0 to 89-113
+      myServo.write(servoPosLeft);                          //Writes mapped pos to servo
+    } else {
+      myServo.write(servoPosInit);                          //Writes initial pos to servo
+    }
+
+    /* H-bridge/DCmotor control*/
+    /*Backward*/
+    motorSpeedBackward = map(motorControl, 100, 0, 0, pwmMax);  //Maps int motorControl from 100-0 to 0-pwmMax(0-255)
+    //brakeDistanceBackward = (motorSpeedBackward * 10) / 10 + 8; //Brake distance in CM
+
+    /*Forward*/
+    motorSpeedForward = map(motorControl, 100, 200, 0, pwmMax); //Maps int motorControl from 100-200 to 0-pwmMax(0-255)
+    //brakeDistanceForward = (motorSpeedForward * 10) / 10 + 8;   //Brake distance in CM
+
+
+    /*Speed control*/
+    if (motorControl < 100) {        // && backwardSensor.getDistance() > brakeDistanceBackward
+      analogWrite(IN_1, motorSpeedBackward);  //Writes mapped speed to DCmotor
+    } else if (motorControl > 100) { // && forwardSensor.getDistance() > brakeDistanceForward
+      analogWrite(IN_2, motorSpeedForward); //Writes mapped speed to DCmotor
+    } else {
+      resetPorts();
+    }
+  }
+
