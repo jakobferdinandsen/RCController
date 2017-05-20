@@ -8,8 +8,10 @@
 /* Drive mode setup*/
 int driveMode = 4;                //Controls the different drive modes
 int startDegrees = 0;             //Used to control when to turn in the different cases
-int nextDegrees = 0;              //Used to define the next turn in the different cases
-int previousMode = 0;
+int targetDegrees = 0;              //Used to define the next turn in the different cases
+long resetTime = 0;
+#define patternSpeed 140;
+#define patternTurnValue 40;
 
 int distanceForward = 0;
 int distanceBackward = 0;
@@ -65,6 +67,34 @@ void resetPorts() {
   digitalWrite(IN_2, 0);
 }
 
+void turn(int target) {
+  int current = compassDegrees.getDegrees();
+  bool result = true;
+  int diff = 0;
+  if (target > current) {
+    diff = target - current;
+  } else {
+    diff = current - target;
+  }
+  int dist = 0;
+  if (diff > 180) {
+    dist = 360 - diff;
+  } else {
+    dist = diff;
+  }
+  if (diff != dist) {
+    result = current > 180;
+  } else {
+    result = target - current > 0;
+  }
+
+  if (result) {
+    servoControl = 100 + patternTurnValue;
+  } else {
+    servoControl = 100 - patternTurnValue;
+  }
+}
+
 void serialEvent() {
   /*Bluetooth */
   StaticJsonBuffer<200> jsonBuffer;
@@ -75,6 +105,7 @@ void serialEvent() {
     driveMode = json["control"];
   }
 }
+
 void loop() {
   /*Drive mode*/
   switch (driveMode) {
@@ -92,18 +123,29 @@ void loop() {
       eightMode();
       break;
     case 4:                                 //Drive in manuel mode
-      servoControl = servoControlBluetooth;
-      motorControl = motorControlBluetooth;
       manuelMode();
       break;
   }
-
+  run();
   delay(1);
 }
 
 void squareMode() {
+      motorControl = patternSpeed;
 
-  }
+      if (resetTime == 0) {
+        resetTime = millis();
+      }
+      if (millis() - resetTime > 2500) {
+        resetTime = 0;
+        startDegrees = 0;
+        targetDegrees = startDegrees + 90;
+        if (targetDegrees > 359) {
+          targetDegrees -= 360;
+        }
+      }
+      turn(targetDegrees);
+}
 
   void rectangelMode() {
     distanceForward = forwardSensor.getDistance();
@@ -121,7 +163,12 @@ void squareMode() {
 
   }
 
-  void manuelMode() {
+void manualMode(){
+      servoControl = servoControlBluetooth;
+      motorControl = motorControlBluetooth;
+}
+
+  void run() {
     /* Servo control*/
     if (servoControl < 100) {
       servoPosRight = map(servoControl, 101, 200, 89, 65);    //Maps int from 100-200 to 89-65
