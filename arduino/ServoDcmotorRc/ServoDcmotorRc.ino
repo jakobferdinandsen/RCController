@@ -8,8 +8,12 @@
 /* Drive mode setup*/
 int driveMode = 4;                //Controls the different drive modes
 int startDegrees = 0;             //Used to control when to turn in the different cases
-int nextDegrees = 0;              //Used to define the next turn in the different cases
+int targetDegrees = 0;              //Used to define the next turn in the different cases
 int previousMode = 0;
+
+long resetTime = 0;
+#define patternSpeed 40;
+#define patternTurnValue 140;
 
 /* Servo setup */
 Servo myServo;                    //create servo object to control a servo
@@ -63,6 +67,28 @@ void resetPorts() {
   digitalWrite(IN_2, 0);
 }
 
+bool goRight(int current, int target){
+  bool result = true;
+  int diff = 0;
+  if (target > current){
+    diff = target - current;
+  }else{
+    diff = current - target;
+  }
+  int dist = 0;
+  if (diff > 180){
+    dist = 360 - diff;
+  }else{
+    dist = diff;
+  }
+  if (diff != dist){
+    result = current > 180;
+  }else{
+    result = target - current > 0;
+  }
+  return result;
+}
+
 void loop() {
   /* Bluetooth */
   StaticJsonBuffer<200> jsonBuffer;
@@ -71,9 +97,6 @@ void loop() {
     motorControlBluetooth = json["speed"];
     servoControlBluetooth = json["direction"];
     driveMode = json["control"];
-    Serial.println(motorControlBluetooth);
-    Serial.println(servoControlBluetooth);
-    Serial.println(driveMode);
   }
 
   /*Drive mode*/
@@ -86,7 +109,7 @@ void loop() {
       if (previousMode != driveMode) {
         previousMode = driveMode;
         startDegrees = compassDegrees.getDegrees();
-        nextDegrees = startDegrees + 90;
+        targetDegrees = startDegrees + 90;
       }
 
       //   if (nextDegrees > 360) {
@@ -95,7 +118,24 @@ void loop() {
 
       //  }
 
+      motorControl = patternSpeed;
 
+      if (resetTime == 0) {
+        resetTime = millis();
+      }
+      if (millis() - resetTime > 2500) {
+        resetTime = 0;
+        startDegrees = 0;
+        targetDegrees = startDegrees + 90;
+        if (targetDegrees > 359) {
+          targetDegrees -= 360;
+        }
+      }
+      if (goRight(compassDegrees.getDegrees(), targetDegrees)){
+        servoControl = 100 + patternTurnValue;
+      }else{
+        servoControl = 100 - patternTurnValue;
+      }
       ;
       break;
     case 2:                                 //Drive in rectangel
