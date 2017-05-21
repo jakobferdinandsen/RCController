@@ -10,8 +10,10 @@ int driveMode = 4;                //Controls the different drive modes
 int startDegrees = 0;             //Used to control when to turn in the different cases
 int targetDegrees = 0;              //Used to define the next turn in the different cases
 long resetTime = 0;
-#define patternSpeed 110;
-#define patternTurnValue 100;
+#define patternSpeed 115;
+#define patternTurnValue 60;
+
+bool autoManual = 0;
 
 int distanceForward = 0;
 int distanceBackward = 0;
@@ -127,6 +129,11 @@ void loop() {
       break;
   }
   run();
+  if (driveMode == 4){
+      autoManual = HIGH;
+  } else {
+      autoManual = LOW;
+  }
   delay(1);
 }
 
@@ -185,21 +192,34 @@ void run() {
 
   /* H-bridge/DCmotor control*/
   /*Backward*/
-  motorSpeedBackward = map(motorControl, 100, 0, 0, pwmMax);  //Maps int motorControl from 100-0 to 0-pwmMax(0-255)
-  //brakeDistanceBackward = (motorSpeedBackward * 10) / 10 + 8; //Brake distance in CM
+  if (autoManual == LOW) {
+    brakeDistanceBackward = (motorSpeedBackward * 10) / 10 + 8; //Brake distance in CM
+    brakeDistanceForward = (motorSpeedForward * 10) / 10 + 8;   //Brake distance in CM
 
-  /*Forward*/
+  }
+
+  motorSpeedBackward = map(motorControl, 100, 0, 0, pwmMax);  //Maps int motorControl from 100-0 to 0-pwmMax(0-255)
   motorSpeedForward = map(motorControl, 100, 200, 0, pwmMax); //Maps int motorControl from 100-200 to 0-pwmMax(0-255)
-  //brakeDistanceForward = (motorSpeedForward * 10) / 10 + 8;   //Brake distance in CM
+
 
 
   /*Speed control*/
-  if (motorControl < 100) {        // && backwardSensor.getDistance() > brakeDistanceBackward
-    analogWrite(IN_1, motorSpeedBackward);  //Writes mapped speed to DCmotor
-  } else if (motorControl > 100) { // && forwardSensor.getDistance() > brakeDistanceForward
-    analogWrite(IN_2, motorSpeedForward); //Writes mapped speed to DCmotor
+  if (autoManual == LOW) {
+    if (motorControl < 100 && backwardSensor.getDistance() > brakeDistanceBackward) {        // && backwardSensor.getDistance() > brakeDistanceBackward
+      analogWrite(IN_1, motorSpeedBackward);  //Writes mapped speed to DCmotor
+    } else if (motorControl > 100 && forwardSensor.getDistance() > brakeDistanceForward) { // && forwardSensor.getDistance() > brakeDistanceForward
+      analogWrite(IN_2, motorSpeedForward); //Writes mapped speed to DCmotor
+    } else {
+      resetPorts();
+    }
   } else {
-    resetPorts();
+    if (motorControl < 100) {        // && backwardSensor.getDistance() > brakeDistanceBackward
+      analogWrite(IN_1, motorSpeedBackward);  //Writes mapped speed to DCmotor
+    } else if (motorControl > 100) { // && forwardSensor.getDistance() > brakeDistanceForward
+      analogWrite(IN_2, motorSpeedForward); //Writes mapped speed to DCmotor
+    } else {
+      resetPorts();
+    }
   }
 }
 
