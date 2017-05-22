@@ -11,11 +11,11 @@ Created by Jonas Hansen May 13, 2017.
 class MagneticCompass
    {
     public:
-      MagneticCompass(int address);
-      int getDegrees();
+      MagneticCompass(int pwmPin);
+      int getHeading();
 
     private:
-      int _address;
+      int _pwmPin;
    };
 
 #endif

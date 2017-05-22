@@ -6,14 +6,15 @@
 #include <ArduinoJson.h>          //Library that contains json funktions
 
 /* Drive mode setup*/
-int driveMode = 4;                //Controls the different drive modes
+int driveMode = 0;                //Controls the different drive modes
 int startDegrees = 0;             //Used to control when to turn in the different cases
 int targetDegrees = 0;              //Used to define the next turn in the different cases
 long resetTime = 0;
 #define patternSpeed 115;
-#define patternTurnValue 60;
+#define patternTurnValue 100;
 
-bool autoManual = 0;
+bool autoManual;
+int delayTime = 1;
 
 int distanceForward = 0;
 int distanceBackward = 0;
@@ -45,7 +46,7 @@ DistanceSensor forwardSensor(4, 2);   //Setup for forward sensor with trigPin 4,
 DistanceSensor backwardSensor(8, 7);  //Setup for backward sensor with trigPin 8, echoPin 7
 
 /* Mangnetic compass setup*/
-MagneticCompass compassDegrees(0x60); //Setup for magnetic compass with address 0x60 (compass pin2 -> board analog5, compass pin3 -> board analog4)
+MagneticCompass compass(6); //Setup for magnetic compass with address 0x60 (compass pin2 -> board analog5, compass pin3 -> board analog4)
 
 void setup() {
   Wire.begin();                   //Starts comunication with magnetic compass
@@ -70,7 +71,7 @@ void resetPorts() {
 }
 
 void turn(int target) {
-  int current = compassDegrees.getDegrees();
+  int current = compass.getHeading();
   bool result = true;
   int diff = 0;
   if (target > current) {
@@ -129,12 +130,13 @@ void loop() {
       break;
   }
   run();
-  if (driveMode == 4){
-      autoManual = HIGH;
+  autoManual = driveMode == 4;
+  if (!autoManual) {
+    delayTime = 100;
   } else {
-      autoManual = LOW;
+    delayTime = 1;
   }
-  delay(1);
+  delay(delayTime);
 }
 
 void squareMode() {
@@ -145,31 +147,21 @@ void squareMode() {
   }
   if (millis() - resetTime > 5500) {
     resetTime = 0;
-    startDegrees = compassDegrees.getDegrees();
+    startDegrees = compass.getHeading();
     targetDegrees = startDegrees + 90;
     if (targetDegrees > 359) {
       targetDegrees -= 360;
     }
   }
   turn(targetDegrees);
-  //Serial.println(servoControl);
-  //Serial.println(targetDegrees);
-  //Serial.println(startDegrees);
+  Serial.println(compass.getHeading());
 }
 
 void rectangelMode() {
-  distanceForward = forwardSensor.getDistance();
-  if (distanceForward > 50) {
-    analogWrite(IN_2, 50);
-  } else {
-    resetPorts();
-  }
+
 }
 
 void eightMode() {
-
-
-
 
 }
 
@@ -192,10 +184,9 @@ void run() {
 
   /* H-bridge/DCmotor control*/
   /*Backward*/
-  if (autoManual == LOW) {
+  if (!autoManual) {
     brakeDistanceBackward = (motorSpeedBackward * 10) / 10 + 8; //Brake distance in CM
     brakeDistanceForward = (motorSpeedForward * 10) / 10 + 8;   //Brake distance in CM
-
   }
 
   motorSpeedBackward = map(motorControl, 100, 0, 0, pwmMax);  //Maps int motorControl from 100-0 to 0-pwmMax(0-255)
@@ -204,7 +195,7 @@ void run() {
 
 
   /*Speed control*/
-  if (autoManual == LOW) {
+  if (!autoManual) {
     if (motorControl < 100 && backwardSensor.getDistance() > brakeDistanceBackward) {        // && backwardSensor.getDistance() > brakeDistanceBackward
       analogWrite(IN_1, motorSpeedBackward);  //Writes mapped speed to DCmotor
     } else if (motorControl > 100 && forwardSensor.getDistance() > brakeDistanceForward) { // && forwardSensor.getDistance() > brakeDistanceForward
