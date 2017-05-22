@@ -8,16 +8,16 @@
 /* Drive mode setup*/
 int driveMode = 0;                //Controls the different drive modes
 int startDegrees = 0;             //Used to control when to turn in the different cases
-int targetDegrees = 0;              //Used to define the next turn in the different cases
-long resetTime = 0;
-#define patternSpeed 115;
-#define patternTurnValue 100;
+int targetDegrees = 0;            //Used to define the next turn in the different cases
+long resetTime = 0;               //Used in auto functions
+#define patternSpeed 115;         //Speed in auto functions 0-100-200 (works like motor control)
+#define patternTurnValue 100;     //Turning amount in auto function 0-100
 
-bool autoManual;
-int delayTime = 1;
+bool autoManual;                  //Used to define if in auto or manual mode (manual = True)
+int delayTime = 1;                //used to delay (1 in manual and 100 in auto)
 
-int distanceForward = 0;
-int distanceBackward = 0;
+int distanceForward = 0;          //Distance it takes to brake without hitting something, forward diraction
+int distanceBackward = 0;         //Distance it takes to brake without hitting something, backward diraction
 
 /* Servo setup */
 Servo myServo;                    //create servo object to control a servo
@@ -71,6 +71,7 @@ void resetPorts() {
 }
 
 void turn(int target) {
+  /* Turn'S the car the fastes route to the target*/
   int current = compass.getHeading();
   bool result = true;
   int diff = 0;
@@ -99,7 +100,7 @@ void turn(int target) {
 }
 
 void serialEvent() {
-  /*Bluetooth */
+  /*Bluetooth, takes data from the serial and assinges them to their variables */
   StaticJsonBuffer<200> jsonBuffer;
   JsonObject& json = jsonBuffer.parseObject(Serial);
   if (json.success()) {
@@ -112,35 +113,36 @@ void serialEvent() {
 void loop() {
   /*Drive mode*/
   switch (driveMode) {
-    case 0:                                 //STOP!
+    case 0:                       //STOP
       motorControl = 100;
       servoControl = 100;
       break;
-    case 1:                                 //Drive in square
+    case 1:                       //Drive in square
       squareMode();
       break;
-    case 2:                                 //Drive in rectangel
+    case 2:                       //Drive in rectangel
       rectangelMode();
       break;
-    case 3:                                 //Drive in figure eight pattern
+    case 3:                       //Drive in figure eight pattern
       eightMode();
       break;
-    case 4:                                 //Drive in manuel mode
+    case 4:                       //Drive in manuel mode
       manualMode();
       break;
   }
-  run();
-  autoManual = driveMode == 4;
-  if (!autoManual) {
+  run();                          //Run is used to control the servo and DC-motor
+  autoManual = driveMode == 4;    //Auto or manual
+  if (!autoManual) {              //If auto is true delay = 100, if auto is false delay = 1
     delayTime = 100;
   } else {
     delayTime = 1;
   }
-  delay(delayTime);
+  delay(delayTime);               //Delay for stability
 }
 
 void squareMode() {
-  motorControl = patternSpeed;
+  /* Squaremode */
+  motorControl = patternSpeed;            //Assigns speed to motor control
 
   if (resetTime == 0) {
     resetTime = millis();
@@ -148,68 +150,96 @@ void squareMode() {
   if (millis() - resetTime > 5500) {
     resetTime = 0;
     startDegrees = compass.getHeading();
-    targetDegrees = startDegrees + 90;
+    targetDegrees = startDegrees + 90;    //How many degrees in each corner
     if (targetDegrees > 359) {
       targetDegrees -= 360;
     }
   }
   turn(targetDegrees);
-  Serial.println(compass.getHeading());
 }
 
 void rectangelMode() {
+  /* Rectanglemode */
+  motorControl = patternSpeed;            //Assigns speed to motor control
 
+  if (resetTime == 0) {
+    resetTime = millis();
+  }
+  if (millis() - resetTime > 5500) {
+    resetTime = 0;
+    startDegrees = compass.getHeading();
+    targetDegrees = startDegrees + 180;   //How many degrees in each corner
+    if (targetDegrees > 359) {  
+      targetDegrees -= 360;
+    }
+  }
+  turn(targetDegrees);
 }
 
 void eightMode() {
+  /* Eightmode */
+  motorControl = patternSpeed;            //Assigns speed to motor control
 
+  if (resetTime == 0) {
+    resetTime = millis();
+  }
+  if (millis() - resetTime > 5500) {
+    resetTime = 0;
+    startDegrees = compass.getHeading();
+    targetDegrees = startDegrees + 270;   //How many degrees in each corner
+    if (targetDegrees > 359) {
+      targetDegrees -= 360;
+    }
+  }
+  turn(targetDegrees);
 }
 
 void manualMode() {
-  servoControl = servoControlBluetooth;
-  motorControl = motorControlBluetooth;
+  servoControl = servoControlBluetooth;   //Assigns servo pos to servo control from bluetooth
+
+  motorControl = motorControlBluetooth;   //Assigns speed to motor control from blutooth
 }
 
 void run() {
   /* Servo control*/
   if (servoControl < 100) {
-    servoPosRight = map(servoControl, 101, 200, 89, 65);    //Maps int from 100-200 to 89-65
-    myServo.write(servoPosRight);                         //Writes mapped pos to servo
+    servoPosRight = map(servoControl, 101, 200, 89, 65);        //Maps int from 100-200 to 89-65
+    myServo.write(servoPosRight);                               //Writes mapped pos to servo
   } else if (servoControl > 100) {
-    servoPosLeft = map(servoControl, 99, 0, 89, 113);  //Maps int from 100-0 to 89-113
-    myServo.write(servoPosLeft);                          //Writes mapped pos to servo
+    servoPosLeft = map(servoControl, 99, 0, 89, 113);           //Maps int from 100-0 to 89-113
+    myServo.write(servoPosLeft);                                //Writes mapped pos to servo
   } else {
-    myServo.write(servoPosInit);                          //Writes initial pos to servo
+    myServo.write(servoPosInit);                                //Writes initial pos to servo
   }
 
   /* H-bridge/DCmotor control*/
   /*Backward*/
   if (!autoManual) {
-    brakeDistanceBackward = (motorSpeedBackward * 10) / 10 + 8; //Brake distance in CM
-    brakeDistanceForward = (motorSpeedForward * 10) / 10 + 8;   //Brake distance in CM
+    brakeDistanceBackward = (motorSpeedBackward * 10) / 10 + 8; //Brake distance in CM, unly used in auto
+    brakeDistanceForward = (motorSpeedForward * 10) / 10 + 8;   //Brake distance in CM, unly used in auto
   }
 
-  motorSpeedBackward = map(motorControl, 100, 0, 0, pwmMax);  //Maps int motorControl from 100-0 to 0-pwmMax(0-255)
-  motorSpeedForward = map(motorControl, 100, 200, 0, pwmMax); //Maps int motorControl from 100-200 to 0-pwmMax(0-255)
+  motorSpeedBackward = map(motorControl, 100, 0, 0, pwmMax);    //Maps int motorControl from 100-0 to 0-pwmMax(0-255)
+  motorSpeedForward = map(motorControl, 100, 200, 0, pwmMax);   //Maps int motorControl from 100-200 to 0-pwmMax(0-255)
 
 
 
   /*Speed control*/
   if (!autoManual) {
-    if (motorControl < 100 && backwardSensor.getDistance() > brakeDistanceBackward) {        // && backwardSensor.getDistance() > brakeDistanceBackward
-      analogWrite(IN_1, motorSpeedBackward);  //Writes mapped speed to DCmotor
-    } else if (motorControl > 100 && forwardSensor.getDistance() > brakeDistanceForward) { // && forwardSensor.getDistance() > brakeDistanceForward
-      analogWrite(IN_2, motorSpeedForward); //Writes mapped speed to DCmotor
+    if (motorControl < 100 && backwardSensor.getDistance() > brakeDistanceBackward) {      //Controls backward movement in automode
+      analogWrite(IN_1, motorSpeedBackward);                                               //Writes mapped speed to DCmotor
+    } else if (motorControl > 100 && forwardSensor.getDistance() > brakeDistanceForward) { //Controls forward movement in automode
+      analogWrite(IN_2, motorSpeedForward);                                                //Writes mapped speed to DCmotor
     } else {
-      resetPorts();
+      resetPorts();                                                                        //Stops the car
     }
   } else {
-    if (motorControl < 100) {        // && backwardSensor.getDistance() > brakeDistanceBackward
+    if (motorControl < 100) {                 //Controls backward movement in manual mode
       analogWrite(IN_1, motorSpeedBackward);  //Writes mapped speed to DCmotor
-    } else if (motorControl > 100) { // && forwardSensor.getDistance() > brakeDistanceForward
-      analogWrite(IN_2, motorSpeedForward); //Writes mapped speed to DCmotor
+    } else if (motorControl > 100) {          //Controls forward movement in manual mode
+      analogWrite(IN_2, motorSpeedForward);   //Writes mapped speed to DCmotor
     } else {
-      resetPorts();
+      resetPorts();                           //Stops the car
     }
   }
 }
