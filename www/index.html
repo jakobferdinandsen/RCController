@@ -12,24 +12,23 @@
                 rel="stylesheet">
 
         <link href="css.css" rel="stylesheet">
-        <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+        <script
+                src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+        <script src="https://yoannmoinet.github.io/nipplejs/javascripts/nipplejs.js"></script>
     </head>
     <body>
-        <div class="flex-container" style="flex-direction: column">
+        <div class="flex-container">
             <button class="btn btn-primary" id="connectButton">Connect</button>
-            <a href="manualControl.html" class="btn btn-primary">Manual override</a>
-            <button data-signal="1" class="btn btn-primary control">Square</button>
-            <button data-signal="2" class="btn btn-primary control">Rectangle</button>
-            <button data-signal="3" class="btn btn-primary control">Figure eight</button>
-            <button data-signal="0" class="btn btn-danger control">Stop</button>
         </div>
+        <div id="leftZone"></div>
+        <div id="rightZone"></div>
 
         <div id="message">Hello.</div>
         <script type="text/javascript" src="cordova.js"></script>
-        <script type="text/javascript" src="js/bluetooth.js"></script>
         <script type="text/javascript" src="js/index.js"></script>
         <script>
             app.initialize();
         </script>
+        <script type="text/javascript" src="js/joystick.js"></script>
     </body>
 </html>
