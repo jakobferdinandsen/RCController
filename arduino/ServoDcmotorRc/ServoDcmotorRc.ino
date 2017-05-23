@@ -1,8 +1,8 @@
 /* Include */
-#include <MagneticCompass.h>        //Library that contains magnetic compass funktions
-#include <DistanceSensor.h>         //Library that contains distance sensor funktions
-#include <Servo.h>                  //Library that contains servo funktions
-#include <ArduinoJson.h>            //Library that contains json funktions
+#include <MagneticCompass.h>        //Library that contains magnetic compass functions
+#include <DistanceSensor.h>         //Library that contains distance sensor functions
+#include <Servo.h>                  //Library that contains servo functions
+#include <ArduinoJson.h>            //Library that contains json functions
 
 /* Drive mode setup*/
 int driveMode = 0;                  //Controls the different drive modes
