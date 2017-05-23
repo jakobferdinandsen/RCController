@@ -3,6 +3,10 @@
     justify-content: center;
 }
 
+#connectButton {
+    margin-bottom: 2em;
+}
+
 .btn {
     margin: 5px;
 }
@@ -16,4 +20,13 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+}
+
+#sliderContainer {
+    margin-top: 40vh;
+    height: 30vh;
+}
+
+.vert {
+    -webkit-appearance: slider-vertical;
 }

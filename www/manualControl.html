@@ -15,19 +15,21 @@
         <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
     </head>
     <body>
-        <div class="flex-container" style="flex-direction: column">
-            <button class="btn btn-primary" id="connectButton">Connect</button>
-            <a href="manualControl.html" class="btn btn-primary">Manual override</a>
-            <button data-signal="1" class="btn btn-primary control">Square</button>
-            <button data-signal="2" class="btn btn-primary control">Rectangle</button>
-            <button data-signal="3" class="btn btn-primary control">Figure eight</button>
-            <button data-signal="0" class="btn btn-danger control">Stop</button>
+        <div class="flex-container">
+            <button class="btn btn-primary" id="back">Back</button>
+        </div>
+
+        <div class="flex-container" id="sliderContainer">
+            <input id="speed" class="vert slider" type="range" min="0" max="200" step="1" value="100">
+            <input id="direction" class="slider" type="range" min="0" max="200" step="1" value="100">
+
         </div>
 
         <div id="message">Hello.</div>
         <script type="text/javascript" src="cordova.js"></script>
         <script type="text/javascript" src="js/bluetooth.js"></script>
         <script type="text/javascript" src="js/index.js"></script>
+        <script type="text/javascript" src="js/manual.js"></script>
         <script>
             app.initialize();
         </script>
