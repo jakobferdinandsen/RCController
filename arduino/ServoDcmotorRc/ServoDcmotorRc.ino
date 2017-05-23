@@ -1,67 +1,65 @@
 /* Include */
-#include <MagneticCompass.h>      //Library that contains magnetic compass funktions
-#include <Wire.h>                 //Library for comunication with magnetic compass
-#include <DistanceSensor.h>       //Library that contains distance sensor funktions
-#include <Servo.h>                //Library that contains servo funktions
-#include <ArduinoJson.h>          //Library that contains json funktions
+#include <MagneticCompass.h>        //Library that contains magnetic compass funktions
+#include <DistanceSensor.h>         //Library that contains distance sensor funktions
+#include <Servo.h>                  //Library that contains servo funktions
+#include <ArduinoJson.h>            //Library that contains json funktions
 
 /* Drive mode setup*/
-int driveMode = 0;                //Controls the different drive modes
-int startDegrees = 0;             //Used to control when to turn in the different cases
-int targetDegrees = 0;            //Used to define the next turn in the different cases
-long resetTime = 0;               //Used in auto functions
-#define patternSpeed 115;         //Speed in auto functions 0-100-200 (works like motor control)
-#define patternTurnValue 100;     //Turning amount in auto function 0-100
+int driveMode = 0;                  //Controls the different drive modes
+int startDegrees = 0;               //Used to control when to turn in the different cases
+int targetDegrees = 0;              //Used to define the next turn in the different cases
+long resetTime = 0;                 //Used in auto functions
+#define patternSpeed 115;           //Speed in auto functions 0-100-200 (works like motor control)
+#define patternTurnValue 100;       //Turning amount in auto function 0-100
 
-bool autoManual;                  //Used to define if in auto or manual mode (manual = True)
-int delayTime = 1;                //used to delay (1 in manual and 100 in auto)
+bool autoManual;                    //Used to define if in auto or manual mode (manual = True)
+int delayTime = 1;                  //Used to delay (1 in manual and 100 in auto)
 
-int distanceForward = 0;          //Distance it takes to brake without hitting something, forward diraction
-int distanceBackward = 0;         //Distance it takes to brake without hitting something, backward diraction
+int distanceForward = 0;            //Distance it takes to brake without hitting something, forward direction
+int distanceBackward = 0;           //Distance it takes to brake without hitting something, backward direction
 
 /* Servo setup */
-Servo myServo;                    //create servo object to control a servo
-int servoPosRight = 0;            //Servo position right
-int servoPosLeft = 0;             //Servo position left
-int servoPosInit = 89;            //Initialising servo position
-int servoControl = 100;           //Servo control int 200-100=right 100-0=left
-int servoControlBluetooth = 100;  //Servo control bluetooth same attributes as servoControl
+Servo myServo;                      //create servo object to control a servo
+int servoPosRight = 0;              //Servo position right
+int servoPosLeft = 0;               //Servo position left
+int servoPosInit = 89;              //Initialising servo position
+int servoControl = 100;             //Servo control int 200-100=right 100-0=left
+int servoControlBluetooth = 100;    //Servo control bluetooth same attributes as servoControl
 
 /* H-bridge setup */
-#define  IN_1  3                  //Defining IN_1 as pin 3, PWM signal for forward movement(bridge 1)
-#define  IN_2  11                 //Defining IN_2 as pin 11, PWM signal for backward movement(bridge 2)
-#define  INH_1 12                 //Defining INH_1 as pin 12, inhibit signal for bridge 1 
-#define  INH_2 13                 //Defining INH_1 as pin 13, inhibit signal for bridge 2
-long brakeDistanceBackward = 100; //Brake distance in CM
-long brakeDistanceForward = 100;  //Brake distance in CM
-int motorSpeedForward = 0;        //Motor speed forward PWM
-int motorSpeedBackward = 0;       //Motor speed backward PWM
-int motorControl = 100;           //Motor control int 200-100=forward speed 100-0=backward speed
-int motorControlBluetooth = 100;  //Motor bluetooth control same attributes as motorControl
-int motorControlIntern = 100;     //Motor intern control same attributes as motorControl
-int pwmMax = 255;                 //Max PWM signal to DCmotor
+#define  IN_1  3                    //Defining IN_1 as pin 3, PWM signal for forward movement(bridge 1)
+#define  IN_2  11                   //Defining IN_2 as pin 11, PWM signal for backward movement(bridge 2)
+#define  INH_1 12                   //Defining INH_1 as pin 12, inhibit signal for bridge 1 
+#define  INH_2 13                   //Defining INH_1 as pin 13, inhibit signal for bridge 2
+long brakeDistanceBackward = 100;   //Brake distance in CM
+long brakeDistanceForward = 100;    //Brake distance in CM
+int motorSpeedForward = 0;          //Motor speed forward PWM
+int motorSpeedBackward = 0;         //Motor speed backward PWM
+int motorControl = 100;             //Motor control int 200-100=forward speed 100-0=backward speed
+int motorControlBluetooth = 100;    //Motor bluetooth control same attributes as motorControl
+int motorControlIntern = 100;       //Motor intern control same attributes as motorControl
+int pwmMax = 255;                   //Max PWM signal to DCmotor
 
 /* Distance sensors setup*/
-DistanceSensor forwardSensor(4, 2);   //Setup for forward sensor with trigPin 4, echoPin 2
-DistanceSensor backwardSensor(8, 7);  //Setup for backward sensor with trigPin 8, echoPin 7
+DistanceSensor forwardSensor(4, 2); //Setup for forward sensor with trigPin 4, echoPin 2
+DistanceSensor backwardSensor(8, 7);//Setup for backward sensor with trigPin 8, echoPin 7
 
 /* Mangnetic compass setup*/
-MagneticCompass compass(6); //Setup for magnetic compass with address 0x60 (compass pin2 -> board analog5, compass pin3 -> board analog4)
+MagneticCompass compass(6);         //Setup for magnetic compass with pwm pin 6
 
 void setup() {
-  Wire.begin();                   //Starts comunication with magnetic compass
-  Serial.begin(115200);           //Starts bluetooth serial comunication
+  Serial.begin(115200);             //Starts bluetooth serial comunication
   /* Servo */
-  myServo.attach(9);              //attaches the servo on pin 9 to the servo object
-  myServo.write(servoPosInit);    //tell servo to go to position, left = 110, middel = 89, right = 65
+  myServo.attach(9);                //attaches the servo on pin 9 to the servo object
+  myServo.write(servoPosInit);      //tell servo to go to position, left = 110, middel = 89, right = 65
   /* H-Bridge */
-  pinMode(IN_1, OUTPUT);          //H-brige pinmode for IN_1
-  pinMode(IN_2, OUTPUT);          //H-brige pinmode for IN_2
-  pinMode(INH_1, OUTPUT);         //H-brige pinmode for INH_1
-  pinMode(INH_2, OUTPUT);         //H-brige pinmode for INH_2
-  resetPorts();                   //H-brige reset input ports on bridge 1 and 2
-  digitalWrite(INH_1, 1);         //H-brige sets sleep mode to off on bridge 1
-  digitalWrite(INH_2, 1);         //H-brige sets sleep mode to off on bridge 2
+  pinMode(IN_1, OUTPUT);            //H-brige pinmode for IN_1
+  pinMode(IN_2, OUTPUT);            //H-brige pinmode for IN_2
+  pinMode(INH_1, OUTPUT);           //H-brige pinmode for INH_1
+  pinMode(INH_2, OUTPUT);           //H-brige pinmode for INH_2
+  resetPorts();                     //H-brige reset input ports on bridge 1 and 2
+  digitalWrite(INH_1, 1);           //H-brige sets sleep mode to off on bridge 1
+  digitalWrite(INH_2, 1);           //H-brige sets sleep mode to off on bridge 2
 }
 
 void resetPorts() {
@@ -100,7 +98,7 @@ void turn(int target) {
 }
 
 void serialEvent() {
-  /*Bluetooth, takes data from the serial and assinges them to their variables */
+  /*Bluetooth, takes data from the serial and assings them to their variables */
   StaticJsonBuffer<200> jsonBuffer;
   JsonObject& json = jsonBuffer.parseObject(Serial);
   if (json.success()) {
@@ -215,8 +213,8 @@ void run() {
   /* H-bridge/DCmotor control*/
   /*Backward*/
   if (!autoManual) {
-    brakeDistanceBackward = (motorSpeedBackward * 10) / 10 + 8; //Brake distance in CM, unly used in auto
-    brakeDistanceForward = (motorSpeedForward * 10) / 10 + 8;   //Brake distance in CM, unly used in auto
+    brakeDistanceBackward = (motorSpeedBackward * 10) / 10 + 8; //Brake distance in cm, only used in auto
+    brakeDistanceForward = (motorSpeedForward * 10) / 10 + 8;   //Brake distance in cm, only used in auto
   }
 
   motorSpeedBackward = map(motorControl, 100, 0, 0, pwmMax);    //Maps int motorControl from 100-0 to 0-pwmMax(0-255)
